@@ -1247,11 +1247,7 @@
           userMsg('帮我用 GitHub API 查一下我的账号信息')
           await sleep(500)
           guard(id)
-          await say(
-            id,
-            '调用 GitHub API 需要你的个人访问令牌。我弹一张安全卡片给你，令牌不会出现在对话里。'
-          )
-          const row = toolRow('request_secret', CARD.label)
+          await say(id, '好，这得用你的 GitHub token 才能查，麻烦在下面填一下。')
           await sleep(300)
           guard(id)
           state.block = { requestId: `secret-${Date.now()}-1`, ...CARD }
@@ -1276,7 +1272,6 @@
             })
           }
           state.result = formatOutcome(outcome.status)
-          row.done(state.result)
           renderInspector()
           await sleep(400)
           guard(id)
@@ -1295,7 +1290,7 @@
             return
           }
 
-          await say(id, 'Token 已就绪，开始调用。')
+          await say(id, '收到，我查一下。')
           const ref = `$${ENV}`
           const body = JSON.stringify(
             {
