@@ -33,47 +33,6 @@
         --mono: ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, Menlo, monospace;
         color-scheme: light;
       }
-      @media (prefers-color-scheme: dark) {
-        :root:not([data-theme='light']) {
-          --cola-bg: #1a1918;
-          --cola-bg-surface: #2a2928;
-          --cola-text: #e9e4de;
-          --cola-text-strong: #fff;
-          --cola-text-muted: #a8a29e;
-          --cola-border: #2a2928;
-          --cola-border-strong: #57534e;
-          --cola-accent: #fff;
-          --cola-accent-fg: #000;
-          --page: #121110;
-          --code-bg: #222120;
-          --ok: #6fcf97;
-          --warn: #f2b35e;
-          --bad: #f28b82;
-          --redact-bg: rgba(242, 179, 94, 0.16);
-          --plain-bg: rgba(242, 139, 130, 0.14);
-          color-scheme: dark;
-        }
-      }
-      :root[data-theme='dark'] {
-        --cola-bg: #1a1918;
-        --cola-bg-surface: #2a2928;
-        --cola-text: #e9e4de;
-        --cola-text-strong: #fff;
-        --cola-text-muted: #a8a29e;
-        --cola-border: #2a2928;
-        --cola-border-strong: #57534e;
-        --cola-accent: #fff;
-        --cola-accent-fg: #000;
-        --page: #121110;
-        --code-bg: #222120;
-        --ok: #6fcf97;
-        --warn: #f2b35e;
-        --bad: #f28b82;
-        --redact-bg: rgba(242, 179, 94, 0.16);
-        --plain-bg: rgba(242, 139, 130, 0.14);
-        color-scheme: dark;
-      }
-
       * {
         box-sizing: border-box;
       }
@@ -185,36 +144,6 @@
         background: var(--cola-bg);
         font-size: 13px;
         margin-bottom: 12px;
-      }
-      .controls .grp {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 6px;
-      }
-      .controls .lbl {
-        color: var(--cola-text-muted);
-        margin-right: 2px;
-      }
-      .seg {
-        display: inline-flex;
-        border: 1px solid var(--cola-border-strong);
-        border-radius: 7px;
-        overflow: hidden;
-      }
-      .seg button {
-        border: 0;
-        background: transparent;
-        color: var(--cola-text);
-        padding: 4px 10px;
-        font-size: 13px;
-      }
-      .seg button + button {
-        border-left: 1px solid var(--cola-border-strong);
-      }
-      .seg button[aria-pressed='true'] {
-        background: var(--cola-accent);
-        color: var(--cola-accent-fg);
       }
       .tbtn {
         border: 1px solid var(--cola-border-strong);
@@ -736,14 +665,6 @@
           <label class="chk"
             ><input type="checkbox" id="leak" checked /> 模型不小心把 token 打印出来</label
           >
-          <div class="grp">
-            <span class="lbl">主题</span>
-            <div class="seg" id="theme">
-              <button data-v="auto" aria-pressed="true">跟随系统</button>
-              <button data-v="light" aria-pressed="false">浅色</button>
-              <button data-v="dark" aria-pressed="false">深色</button>
-            </div>
-          </div>
           <button class="tbtn" id="restart">重新开始</button>
         </div>
 
@@ -1339,21 +1260,6 @@
       }
 
       // ---------- controls ----------
-      function bindSeg(id, onChange) {
-        const seg = $(id)
-        seg.addEventListener('click', (e) => {
-          const b = e.target.closest('button')
-          if (!b) return
-          seg
-            .querySelectorAll('button')
-            .forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
-          onChange(b.dataset.v)
-        })
-      }
-      bindSeg('#theme', (v) => {
-        if (v === 'auto') document.documentElement.removeAttribute('data-theme')
-        else document.documentElement.setAttribute('data-theme', v)
-      })
       $('#leak').addEventListener('change', (e) => (state.leak = e.target.checked))
       $('#restart').addEventListener('click', run)
       $('#sim').addEventListener('click', (e) => {
