@@ -1,0 +1,1516 @@
+<!doctype html>
+<!-- Throwaway prototype for team review of `request_secret` (branch feat/request-secret).
+     Open this file directly. The runtime is simulated in-page; nothing leaves the browser.
+     Card copy, tool-result text and redaction rules mirror the phase-1 implementation. -->
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>安全收集密钥 · 交互原型</title>
+    <style>
+      /* Cola renderer tokens (styles/colors.css, radius.css). */
+      :root {
+        --cola-bg: #fffdfa;
+        --cola-bg-surface: #f7f3ee;
+        --cola-text: #1a1918;
+        --cola-text-strong: #000;
+        --cola-text-muted: #57534e;
+        --cola-border: rgba(233, 228, 222, 0.9);
+        --cola-border-strong: #a8a29e;
+        --cola-accent: #000;
+        --cola-accent-fg: #fff;
+        --cola-radius-card: 8px;
+        --page: #f5f4ed;
+        --code-bg: #f1ede6;
+        --ok: #2f7d4f;
+        --warn: #a15c07;
+        --bad: #b42318;
+        --redact-bg: rgba(161, 92, 7, 0.14);
+        --plain-bg: rgba(180, 35, 24, 0.1);
+        --ui:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
+          sans-serif;
+        --mono: ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, Menlo, monospace;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) {
+          --cola-bg: #1a1918;
+          --cola-bg-surface: #2a2928;
+          --cola-text: #e9e4de;
+          --cola-text-strong: #fff;
+          --cola-text-muted: #a8a29e;
+          --cola-border: #2a2928;
+          --cola-border-strong: #57534e;
+          --cola-accent: #fff;
+          --cola-accent-fg: #000;
+          --page: #121110;
+          --code-bg: #222120;
+          --ok: #6fcf97;
+          --warn: #f2b35e;
+          --bad: #f28b82;
+          --redact-bg: rgba(242, 179, 94, 0.16);
+          --plain-bg: rgba(242, 139, 130, 0.14);
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme='dark'] {
+        --cola-bg: #1a1918;
+        --cola-bg-surface: #2a2928;
+        --cola-text: #e9e4de;
+        --cola-text-strong: #fff;
+        --cola-text-muted: #a8a29e;
+        --cola-border: #2a2928;
+        --cola-border-strong: #57534e;
+        --cola-accent: #fff;
+        --cola-accent-fg: #000;
+        --page: #121110;
+        --code-bg: #222120;
+        --ok: #6fcf97;
+        --warn: #f2b35e;
+        --bad: #f28b82;
+        --redact-bg: rgba(242, 179, 94, 0.16);
+        --plain-bg: rgba(242, 139, 130, 0.14);
+        color-scheme: dark;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--page);
+        color: var(--cola-text);
+        font: 15px/1.6 var(--ui);
+      }
+      code,
+      pre {
+        font-family: var(--mono);
+        font-size: 12.5px;
+      }
+      :not(pre) > code {
+        background: var(--code-bg);
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+      a {
+        color: inherit;
+        text-underline-offset: 3px;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      button {
+        font: inherit;
+        cursor: pointer;
+      }
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+      :focus-visible {
+        outline: 2px solid var(--cola-border-strong);
+        outline-offset: 2px;
+      }
+      svg.i {
+        width: 1em;
+        height: 1em;
+        flex: none;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .page {
+        max-width: 1180px;
+        margin: auto;
+        padding: 32px 24px 56px;
+      }
+      header.top {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+        color: var(--cola-text-muted);
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid var(--cola-border-strong);
+        border-radius: 999px;
+        padding: 2px 10px;
+        font-size: 12px;
+      }
+      h1 {
+        font-size: 30px;
+        line-height: 1.3;
+        font-weight: 600;
+        margin: 20px 0 8px;
+        color: var(--cola-text-strong);
+      }
+      .lede {
+        max-width: 760px;
+        color: var(--cola-text-muted);
+        margin: 0;
+      }
+      section {
+        margin-top: 44px;
+      }
+      h2 {
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0 0 6px;
+        color: var(--cola-text-strong);
+      }
+      .sub {
+        color: var(--cola-text-muted);
+        margin: 0 0 16px;
+        font-size: 14px;
+      }
+
+      /* ---------- demo controls ---------- */
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 18px;
+        align-items: center;
+        padding: 12px 14px;
+        border: 1px solid var(--cola-border);
+        border-radius: 10px;
+        background: var(--cola-bg);
+        font-size: 13px;
+        margin-bottom: 12px;
+      }
+      .controls .grp {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+      }
+      .controls .lbl {
+        color: var(--cola-text-muted);
+        margin-right: 2px;
+      }
+      .seg {
+        display: inline-flex;
+        border: 1px solid var(--cola-border-strong);
+        border-radius: 7px;
+        overflow: hidden;
+      }
+      .seg button {
+        border: 0;
+        background: transparent;
+        color: var(--cola-text);
+        padding: 4px 10px;
+        font-size: 13px;
+      }
+      .seg button + button {
+        border-left: 1px solid var(--cola-border-strong);
+      }
+      .seg button[aria-pressed='true'] {
+        background: var(--cola-accent);
+        color: var(--cola-accent-fg);
+      }
+      .tbtn {
+        border: 1px solid var(--cola-border-strong);
+        background: transparent;
+        color: var(--cola-text);
+        border-radius: 7px;
+        padding: 4px 10px;
+        font-size: 13px;
+      }
+      .chk {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+      }
+      .sim {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+        font-size: 12.5px;
+        color: var(--cola-text-muted);
+        min-height: 30px;
+        margin-bottom: 12px;
+      }
+
+      /* ---------- layout ---------- */
+      .demo {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+        gap: 16px;
+        align-items: start;
+      }
+      @media (max-width: 920px) {
+        .demo {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ---------- simulated Cola window ---------- */
+      .app {
+        border: 1px solid var(--cola-border-strong);
+        border-radius: 12px;
+        background: var(--cola-bg);
+        overflow: hidden;
+      }
+      .app-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--cola-border);
+        font-size: 13px;
+        color: var(--cola-text-muted);
+      }
+      .dots {
+        display: flex;
+        gap: 6px;
+        margin-right: 6px;
+      }
+      .dots i {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--cola-border-strong);
+        opacity: 0.6;
+      }
+      .chat {
+        height: 640px;
+        overflow-y: auto;
+        padding: 20px 22px 28px;
+        scroll-behavior: smooth;
+      }
+      .msg-user {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        margin: 4px 0 18px;
+      }
+      .msg-user .bubble {
+        max-width: 80%;
+        background: var(--cola-bg-surface);
+        border-radius: 14px;
+        padding: 8px 14px;
+        font-size: 14px;
+        overflow-wrap: anywhere;
+      }
+      .msg-user .from {
+        font-size: 11.5px;
+        color: var(--cola-text-muted);
+        margin-bottom: 4px;
+      }
+      .msg-user .intercept {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+        margin-top: 4px;
+        font-size: 11.5px;
+        color: var(--ok);
+        max-width: 80%;
+      }
+      .msg-bot {
+        max-width: 85%;
+        margin: 4px 0 12px;
+        padding: 8px 14px;
+        border: 1px solid var(--cola-border-strong);
+        border-radius: 14px;
+        font-size: 14px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      .composer {
+        display: flex;
+        gap: 8px;
+        padding: 10px 14px;
+        border-top: 1px solid var(--cola-border);
+      }
+      .a-text {
+        font-size: 14px;
+        margin: 6px 0 10px;
+        overflow-wrap: anywhere;
+      }
+      .a-text .caret {
+        display: inline-block;
+        width: 7px;
+        height: 14px;
+        background: var(--cola-text-muted);
+        vertical-align: -2px;
+        margin-left: 2px;
+        animation: blink 1s steps(2) infinite;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+      .tool {
+        margin: 6px 0 10px;
+        font-size: 13px;
+      }
+      .tool summary {
+        list-style: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        color: var(--cola-text-muted);
+        padding: 2px 0;
+      }
+      .tool summary::-webkit-details-marker {
+        display: none;
+      }
+      .tool-title {
+        flex: none;
+        white-space: nowrap;
+      }
+      .tool summary code {
+        background: none;
+        padding: 0;
+        color: var(--cola-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+      }
+      .tool .spin {
+        width: 10px;
+        height: 10px;
+        border: 2px solid var(--cola-border-strong);
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        flex: none;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .tool pre {
+        margin: 6px 0 0;
+        padding: 10px 12px;
+        background: var(--code-bg);
+        border-radius: 8px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        max-height: 260px;
+        overflow-y: auto;
+      }
+      .redacted {
+        background: var(--redact-bg);
+        color: var(--warn);
+        border-radius: 3px;
+        padding: 0 2px;
+      }
+
+      /* ---------- the secret card (mirrors SecretRequestBlock.tsx) ---------- */
+      .card {
+        border: 1px solid var(--cola-border);
+        border-radius: var(--cola-radius-card);
+        background: var(--cola-bg-surface);
+        padding: 12px 16px;
+        margin: 4px 0 12px;
+        animation: fade 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+      @keyframes fade {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+      }
+      .card-h {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+      }
+      .card-h > svg {
+        margin-top: 3px;
+        color: var(--cola-text-muted);
+        width: 16px;
+        height: 16px;
+      }
+      .card-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--cola-text-strong);
+        margin: 0;
+      }
+      .card-reason {
+        margin: 4px 0 0;
+        font-size: 12px;
+        line-height: 1.6;
+        color: var(--cola-text-muted);
+        white-space: pre-wrap;
+      }
+      .card-row {
+        padding-left: 24px;
+        margin-top: 10px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .card-row.between {
+        justify-content: space-between;
+        margin-top: 8px;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 7px;
+        font-size: 13px;
+        height: 30px;
+        padding: 0 12px;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+      .btn-primary {
+        background: var(--cola-accent);
+        color: var(--cola-accent-fg);
+      }
+      .btn-outline {
+        background: var(--cola-bg);
+        border-color: var(--cola-border-strong);
+        color: var(--cola-text);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--cola-text-muted);
+      }
+      .btn-ghost:hover:not(:disabled) {
+        background: var(--cola-bg);
+      }
+      .input {
+        flex: 1;
+        min-width: 0;
+        height: 30px;
+        border: 1px solid var(--cola-border-strong);
+        border-radius: 7px;
+        background: var(--cola-bg);
+        color: var(--cola-text);
+        padding: 0 10px;
+        font: 13px var(--mono);
+      }
+      .note {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+        font-size: 12px;
+        color: var(--cola-text-muted);
+      }
+      .note.bad {
+        color: var(--bad);
+      }
+      .resolved {
+        padding-left: 24px;
+        margin-top: 8px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        font-size: 12px;
+        color: var(--cola-text-muted);
+      }
+      .resolved.ok {
+        color: var(--cola-text);
+      }
+      .resolved.ok svg {
+        stroke-width: 2.75;
+      }
+
+      /* ---------- inspector ---------- */
+      .insp {
+        border: 1px solid var(--cola-border);
+        border-radius: 12px;
+        background: var(--cola-bg);
+        font-size: 13px;
+      }
+      .insp h3 {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--cola-text-strong);
+      }
+      .insp > div {
+        padding: 12px 14px;
+        border-top: 1px solid var(--cola-border);
+      }
+      .insp > div:first-child {
+        border-top: 0;
+      }
+      .insp .hint {
+        color: var(--cola-text-muted);
+        font-size: 12px;
+        margin: 2px 0 8px;
+      }
+      .insp pre {
+        margin: 0;
+        padding: 8px 10px;
+        background: var(--code-bg);
+        border-radius: 6px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font-size: 11.5px;
+        max-height: 220px;
+        overflow-y: auto;
+      }
+      .empty {
+        color: var(--cola-text-muted);
+        font-style: italic;
+        font-size: 12px;
+      }
+      .tag {
+        font-size: 11px;
+        font-weight: 500;
+        border-radius: 4px;
+        padding: 0 6px;
+      }
+      .tag.safe {
+        color: var(--ok);
+        border: 1px solid currentColor;
+      }
+      .tag.plain {
+        color: var(--bad);
+        background: var(--plain-bg);
+      }
+      .frame {
+        margin-bottom: 8px;
+      }
+      .frame:last-child {
+        margin-bottom: 0;
+      }
+      .frame-h {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+        font: 11.5px var(--mono);
+        margin-bottom: 3px;
+      }
+      .frame-h .dir {
+        color: var(--cola-text-muted);
+      }
+      .frame.rejected .frame-h {
+        color: var(--bad);
+      }
+
+      /* ---------- flow + tables ---------- */
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+        align-items: stretch;
+      }
+      @media (max-width: 860px) {
+        .flow {
+          grid-template-columns: 1fr;
+        }
+      }
+      .hop {
+        border: 1px solid var(--cola-border-strong);
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: var(--cola-bg);
+        font-size: 13px;
+      }
+      .hop b {
+        display: block;
+        font-size: 13.5px;
+        color: var(--cola-text-strong);
+        margin-bottom: 4px;
+      }
+      .hop p {
+        margin: 4px 0 0;
+        color: var(--cola-text-muted);
+        font-size: 12.5px;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 10px;
+        font-size: 12.5px;
+        color: var(--cola-text-muted);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13.5px;
+        background: var(--cola-bg);
+        border: 1px solid var(--cola-border);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      th,
+      td {
+        text-align: left;
+        vertical-align: top;
+        padding: 9px 12px;
+        border-top: 1px solid var(--cola-border);
+      }
+      th {
+        background: var(--cola-bg-surface);
+        font-weight: 600;
+        font-size: 12.5px;
+        border-top: 0;
+      }
+      .tbl-wrap {
+        overflow-x: auto;
+      }
+      ol.q {
+        padding-left: 22px;
+        margin: 0;
+      }
+      ol.q li {
+        margin-bottom: 12px;
+      }
+      ol.q li p {
+        margin: 2px 0 0;
+        color: var(--cola-text-muted);
+        font-size: 14px;
+      }
+      ul.plain {
+        padding-left: 20px;
+        margin: 0;
+      }
+      ul.plain li {
+        margin-bottom: 6px;
+      }
+      footer {
+        margin-top: 48px;
+        padding-top: 18px;
+        border-top: 1px solid var(--cola-border-strong);
+        font-size: 13px;
+        color: var(--cola-text-muted);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 24px;
+      }
+      @media (max-width: 640px) {
+        .page {
+          padding: 20px 16px 40px;
+        }
+        h1 {
+          font-size: 25px;
+        }
+        .chat {
+          height: 560px;
+          padding: 16px 14px 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="i-key" viewBox="0 0 24 24">
+        <path
+          d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"
+        />
+        <circle cx="16.5" cy="7.5" r=".5" fill="currentColor" />
+      </symbol>
+      <symbol id="i-ext" viewBox="0 0 24 24">
+        <path d="M15 3h6v6" />
+        <path d="M10 14 21 3" />
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      </symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24">
+        <path
+          d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+        />
+        <path d="m9 12 2 2 4-4" />
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24">
+        <path d="M18 6 6 18" />
+        <path d="m6 6 12 12" />
+      </symbol>
+      <symbol id="i-term" viewBox="0 0 24 24">
+        <path d="m4 17 6-6-6-6" />
+        <path d="M12 19h8" />
+      </symbol>
+    </svg>
+
+    <main class="page">
+      <header class="top">
+        <span class="pill">交互原型 · 评审用 · 所有行为均为页面内模拟</span>
+        <span>分支 <code>feat/request-secret</code> · 一期已实现，未合并</span>
+      </header>
+      <h1>让 Agent 安全地向用户要密钥</h1>
+      <p class="lede">
+        现在模型需要 API
+        token、密码时，只能让用户把它贴进聊天框：值会留在对话记录里、发给模型服务商、进日志。新工具
+        <code>request_secret</code> 改成：桌面端弹一张安全卡片；飞书等渠道里由 Cola
+        发消息来要，用户直接回复，这条回复在进入对话之前就被拦下。值只进 Cola
+        的临时密钥存储；模型只拿到「怎么引用它」，命令输出里出现的值会被替换成
+        <code>[REDACTED:名字]</code>。
+      </p>
+
+      <section aria-labelledby="demo-h">
+        <h2 id="demo-h">一、试一下</h2>
+        <p class="sub">
+          选一个场景后点「重新开始」。需要填 token 时随便填个假的（例如
+          <code>ghp_demo1234</code>）。右侧面板实时显示每一方能看到什么，红色标签表示那一处有明文。
+        </p>
+
+        <div class="controls" role="group" aria-label="原型设置">
+          <div class="grp">
+            <span class="lbl">场景</span>
+            <div class="seg" id="scenario">
+              <button data-v="desktop" aria-pressed="true">桌面端</button>
+              <button data-v="channel" aria-pressed="false">渠道（飞书私聊）</button>
+              <button data-v="paste" aria-pressed="false">用户已贴到聊天里</button>
+            </div>
+          </div>
+          <label class="chk"
+            ><input type="checkbox" id="leak" checked /> 模型不小心把 token 打印出来</label
+          >
+          <div class="grp">
+            <span class="lbl">主题</span>
+            <div class="seg" id="theme">
+              <button data-v="auto" aria-pressed="true">跟随系统</button>
+              <button data-v="light" aria-pressed="false">浅色</button>
+              <button data-v="dark" aria-pressed="false">深色</button>
+            </div>
+          </div>
+          <button class="tbtn" id="restart">重新开始</button>
+        </div>
+
+        <div class="sim" id="sim" aria-live="polite">
+          <span>等待用户提供时可以模拟：</span>
+          <button class="tbtn" data-sim="timeout" disabled>30 分钟没人理</button>
+          <button class="tbtn" data-sim="abort" disabled>用户点了停止</button>
+          <button class="tbtn" data-sim="foreign" disabled>另一个本地客户端抢答</button>
+        </div>
+
+        <div class="demo">
+          <div class="app" aria-label="模拟的对话窗口">
+            <div class="app-bar">
+              <span class="dots"><i></i><i></i><i></i></span>
+              <span id="app-title">Cola · 主对话</span>
+            </div>
+            <div class="chat" id="chat"></div>
+            <form class="composer" id="composer" autocomplete="off" hidden>
+              <input
+                class="input"
+                id="composer-input"
+                type="text"
+                spellcheck="false"
+                placeholder="回复 token，或回复「取消」"
+                aria-label="在飞书里回复"
+              />
+              <button type="submit" class="btn btn-primary">发送</button>
+            </form>
+          </div>
+
+          <aside class="insp" aria-label="各方可见内容">
+            <div>
+              <h3>模型收到的工具结果 <span class="tag safe">无明文</span></h3>
+              <p class="hint">这就是 <code>request_secret</code> 返回给模型的全部内容。</p>
+              <div id="i-result"><span class="empty">卡片还没结束</span></div>
+            </div>
+            <div>
+              <h3>对话记录里存下的内容 <span class="tag safe">无明文</span></h3>
+              <p class="hint">重开对话时看到的就是这些。</p>
+              <div id="i-block"><span class="empty">还没有</span></div>
+            </div>
+            <div>
+              <h3>传给 Cola 的消息</h3>
+              <p class="hint">用户和 Cola 之间来回的消息。只有用户交出 token 的那一条带值。</p>
+              <div id="i-frames"><span class="empty">暂无</span></div>
+            </div>
+            <div>
+              <h3>Cola 临时保存的密钥</h3>
+              <p class="hint">只在 Cola 后台进程的内存里，24 小时过期，退出即清空。</p>
+              <div id="i-store"><span class="empty">空</span></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section aria-labelledby="flow-h">
+        <h2 id="flow-h">二、值经过哪里</h2>
+        <p class="sub">明文只在下面标红的几步出现；对话记录、模型、日志里都没有。</p>
+        <div class="flow">
+          <div class="hop">
+            <b>① 用户交出 token</b><span class="tag plain">明文</span>
+            <p>
+              桌面端在卡片里填，提交后输入框立刻清空。渠道里直接回复一条消息，这条消息会留在聊天软件自己的记录里。
+            </p>
+          </div>
+          <div class="hop">
+            <b>② 交给 Cola</b><span class="tag plain">明文</span>
+            <p>
+              桌面端只接受弹出卡片的那个窗口提交。渠道里那条回复在变成对话之前就被拦下，不进对话记录。
+            </p>
+          </div>
+          <div class="hop">
+            <b>③ 临时保存</b><span class="tag plain">明文</span>
+            <p>只放在 Cola 后台进程的内存里，24 小时过期，退出即清空。</p>
+          </div>
+          <div class="hop">
+            <b>④ 命令使用</b><span class="tag plain">明文</span>
+            <p>本对话里 Agent 运行的命令可以引用它；其他对话拿不到。</p>
+          </div>
+          <div class="hop">
+            <b>⑤ 回到模型</b><span class="tag safe">已脱敏</span>
+            <p>任何工具输出里出现这个值，都会先替换成 <code>[REDACTED:名字]</code> 再交给模型。</p>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="cases-h">
+        <h2 id="cases-h">三、各种情况下的行为</h2>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>情况</th>
+                <th>桌面端</th>
+                <th>渠道（飞书、Slack 等）</th>
+                <th>模型收到</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>用户提供</td>
+                <td>卡片里填写并保存，卡片变成「✓ 已安全保存」</td>
+                <td>直接回复 token，这条回复被 Cola 拦下</td>
+                <td>怎么引用它，不含值</td>
+              </tr>
+              <tr>
+                <td>用户拒绝</td>
+                <td>点「拒绝」</td>
+                <td>回复「取消」</td>
+                <td>用户拒绝，别再追问，说明卡在哪</td>
+              </tr>
+              <tr>
+                <td>30 分钟没响应</td>
+                <td>卡片变成「未作答」</td>
+                <td>之后的消息照常当作普通对话</td>
+                <td>超时，没有拿到值</td>
+              </tr>
+              <tr>
+                <td>用户点停止</td>
+                <td>卡片变成「未作答」</td>
+                <td>发 <code>/stop</code>，不会被当成 token</td>
+                <td>这一轮被中断</td>
+              </tr>
+              <tr>
+                <td>别人来提交</td>
+                <td>其他客户端提交无效，卡片继续等待</td>
+                <td>只认发起请求的那个人；群里其他人的消息不会被当成 token</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td>定时任务、后台任务</td>
+                <td colspan="2">不会去要，没人在等着回答</td>
+                <td>不可用，下次用户来时再说明需要什么</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="q-h">
+        <h2 id="q-h">四、需要大家拍板的问题</h2>
+        <ol class="q">
+          <li>
+            <b>一期只保存在本次会话（最多 24 小时），够不够？</b>
+            <p>每个新对话都要重新填一次。「记住到系统钥匙串」放在二期，要不要提前？</p>
+          </li>
+          <li>
+            <b>群聊里也允许直接回复 token 吗？</b>
+            <p>
+              私聊里直接回复问题不大。群聊里这条消息所有群成员都能看到（而且得 @Cola
+              才收得到）。可选：群聊也允许；或者群聊里改成提示用户私聊 Cola
+              再提供，但私聊和群聊是两个会话，token 带不过去。
+            </p>
+          </li>
+          <li>
+            <b>卡片放在对话时间线里，还是用弹窗？</b>
+            <p>
+              现在跟提问卡片一样放在时间线里，等待时输入框处于「等你回答」状态。弹窗更醒目，但会挡住上下文。
+            </p>
+          </li>
+          <li>
+            <b>超时 30 分钟合适吗？</b>
+            <p>卡片等待期间这一轮会占着会话；太短用户来不及去网站生成 token，太长会话会卡很久。</p>
+          </li>
+          <li>
+            <b>复用 <code>ask_user_question</code> 的卡片链路有没有坑？</b>
+            <p>
+              那个工具在 #2910
+              被下线，提交里没写原因。需要知道当时的原因（@Shengbin），避免重复踩坑。
+            </p>
+          </li>
+          <li>
+            <b>卡片文案</b>
+            <p>
+              按钮「安全保存 / 拒绝」，底部说明「不会出现在对话中，本对话里的命令可在 24
+              小时内使用。」需要设计和产品过一下。
+            </p>
+          </li>
+        </ol>
+      </section>
+
+      <section aria-labelledby="limit-h">
+        <h2 id="limit-h">五、已知限制</h2>
+        <ul class="plain">
+          <li>少于 4 个字符的值不脱敏，否则会把普通输出改乱。</li>
+          <li>长时间运行的命令，输出末尾几十个字符会晚一点出现（为了识别被切成两段的值）。</li>
+          <li>
+            命令把值换成其他编码（比如 hex）打印出来，或者
+            <code>gh auth login</code> 这类命令把值存进自己的配置文件，拦不住。
+          </li>
+          <li>用户如果已经把 token 贴进聊天框，那条消息里的值无法撤回，只能提醒用户去撤销重建。</li>
+          <li>渠道里回复的 token 会留在聊天软件自己的记录里，Cola 删不掉，只能提醒用户自己删。</li>
+          <li>渠道里 Cola 等待期间，用户发的下一条消息（斜杠命令除外）都会被当成 token。</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="next-h">
+        <h2 id="next-h">六、二期计划</h2>
+        <ul class="plain">
+          <li>「记住」选项：存进系统钥匙串，跨会话使用，可在设置里查看和删除。</li>
+          <li>聊天框粘贴检测：发送前识别出像 token 的内容，提示改用安全卡片。</li>
+          <li>云端应用的 <code>set_secret</code> 改成按引用取值，不再让模型传明文。</li>
+          <li>Coding Cola、CLI 和手机端支持。</li>
+        </ul>
+      </section>
+
+      <footer>
+        <span>实现：<code>apps/agent-runtime/src/agent/tools/request-secret/</code></span>
+        <span>卡片：<code>apps/desktop/src/renderer/components/SecretRequestBlock.tsx</code></span>
+        <span
+          >脱敏扩展：<code>apps/agent-runtime/src/agent/extensions/secret-redactor.ts</code></span
+        >
+      </footer>
+    </main>
+
+    <script>
+      'use strict'
+
+      // ---------- redaction: same rules as request-secret/redact.ts ----------
+      const MIN_REDACT_LENGTH = 4
+      const utf8Base64 = (s) => {
+        const bytes = new TextEncoder().encode(s)
+        let bin = ''
+        for (const b of bytes) bin += String.fromCharCode(b)
+        return btoa(bin)
+      }
+      function needlesFor(name, value) {
+        const label = `[REDACTED:${name}]`
+        const b64 = utf8Base64(value)
+        const forms = new Set([
+          value,
+          b64,
+          b64.replace(/=+$/, ''),
+          b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
+          encodeURIComponent(value)
+        ])
+        return [...forms]
+          .filter((t) => t.length >= MIN_REDACT_LENGTH)
+          .map((text) => ({ text, label }))
+      }
+      const currentNeedles = () =>
+        state.store
+          .flatMap((s) => needlesFor(s.name, s.value))
+          .sort((a, b) => b.text.length - a.text.length)
+      function findMatches(text, needles) {
+        const matches = []
+        for (const n of needles) {
+          let from = 0
+          for (;;) {
+            const start = text.indexOf(n.text, from)
+            if (start < 0) break
+            const end = start + n.text.length
+            if (!matches.some((m) => start < m.end && end > m.start))
+              matches.push({ start, end, label: n.label })
+            from = end
+          }
+        }
+        return matches.sort((a, b) => a.start - b.start)
+      }
+      function applyMatches(text, matches) {
+        let out = ''
+        let cursor = 0
+        for (const m of matches) {
+          out += text.slice(cursor, m.start) + m.label
+          cursor = m.end
+        }
+        return out + text.slice(cursor)
+      }
+      function createStreamRedactor(emit) {
+        let pending = ''
+        return {
+          push(chunk) {
+            pending += chunk
+            const needles = currentNeedles()
+            if (needles.length === 0) {
+              emit(pending)
+              pending = ''
+              return
+            }
+            const hold = Math.max(...needles.map((n) => n.text.length)) - 1
+            const matches = findMatches(pending, needles)
+            let cut = Math.max(0, pending.length - hold)
+            for (const m of matches) if (m.start < cut && m.end > cut) cut = m.end
+            if (cut === 0) return
+            const ready = pending.slice(0, cut)
+            pending = pending.slice(cut)
+            emit(applyMatches(ready, findMatches(ready, needles)))
+          },
+          end() {
+            if (pending) emit(applyMatches(pending, findMatches(pending, currentNeedles())))
+            pending = ''
+          }
+        }
+      }
+
+      // ---------- state ----------
+      const $ = (s, root = document) => root.querySelector(s)
+      const chat = $('#chat')
+      const NAME = 'github_token'
+      const ENV = 'COLA_SECRET_GITHUB_TOKEN'
+      const PASTED = 'ghp_R3v1ewOnlyFakeTok3n00000000000000'
+      const state = {
+        scenario: 'desktop',
+        leak: true,
+        block: null,
+        result: null,
+        frames: [],
+        store: [],
+        pending: null
+      }
+      let runId = 0
+      const CANCEL = Symbol('cancel')
+      const guard = (id) => {
+        if (id !== runId) throw CANCEL
+      }
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+      const esc = (s) =>
+        String(s).replace(
+          /[&<>"]/g,
+          (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]
+        )
+      const icon = (id) => `<svg class="i" aria-hidden="true"><use href="#i-${id}"/></svg>`
+      const scrollDown = () => (chat.scrollTop = chat.scrollHeight)
+      // ---------- chat primitives ----------
+      function userMsg(text, note) {
+        const el = document.createElement('div')
+        el.className = 'msg-user'
+        el.innerHTML =
+          `<div class="bubble">${esc(text)}</div>` +
+          (note ? `<div class="intercept">${icon('shield')}<span>${esc(note)}</span></div>` : '')
+        chat.append(el)
+        scrollDown()
+      }
+      // A bot message as a chat app shows it (channel mode only).
+      function botMsg(text) {
+        const el = document.createElement('div')
+        el.className = 'msg-bot'
+        el.textContent = text
+        chat.append(el)
+        scrollDown()
+      }
+      async function say(id, text) {
+        const el = document.createElement('div')
+        el.className = 'a-text'
+        chat.append(el)
+        for (let i = 1; i <= text.length; i += 2) {
+          guard(id)
+          el.innerHTML = esc(text.slice(0, i)) + '<span class="caret"></span>'
+          scrollDown()
+          await sleep(14)
+        }
+        el.textContent = text
+      }
+      function toolRow(title, detail) {
+        const el = document.createElement('details')
+        el.className = 'tool'
+        el.innerHTML = `<summary><span class="spin"></span><span class="tool-title">${esc(title)}</span><code>${esc(detail)}</code></summary><pre></pre>`
+        chat.append(el)
+        scrollDown()
+        return {
+          el,
+          done(output) {
+            $('.spin', el).outerHTML = icon('term')
+            if (output !== undefined) $('pre', el).textContent = output
+          }
+        }
+      }
+      const highlight = (text) =>
+        esc(text).replace(/\[REDACTED:[a-z0-9_]+\]/g, (m) => `<span class="redacted">${m}</span>`)
+
+      async function runBash(id, command, output) {
+        const row = toolRow('运行命令', command)
+        row.el.open = true
+        const pre = $('pre', row.el)
+        let shown = ''
+        const redactor = createStreamRedactor((t) => {
+          shown += t
+          pre.innerHTML = highlight(shown)
+          scrollDown()
+        })
+        await sleep(350)
+        for (let i = 0; i < output.length; ) {
+          guard(id)
+          const n = 3 + Math.floor(Math.random() * 7)
+          redactor.push(output.slice(i, i + n))
+          i += n
+          await sleep(22)
+        }
+        redactor.end()
+        row.done()
+      }
+
+      // ---------- the card ----------
+      const CARD = {
+        label: 'GitHub personal access token',
+        reason:
+          '用来调用 GitHub API 读取你的账号信息。到 GitHub → Settings → Developer settings → Personal access tokens 生成一个，勾选 read:user 即可。',
+        url: 'https://github.com/settings/tokens',
+        placeholder: 'ghp_…',
+        name: NAME
+      }
+      function cardHeader(b) {
+        return `<div class="card-h">${icon('key')}<div style="min-width:0;flex:1"><p class="card-title">${esc(b.label)}</p><p class="card-reason">${esc(b.reason)}</p></div></div>`
+      }
+      function renderCard(el, b) {
+        if (b.status) {
+          const ok = b.status === 'provided'
+          const text = ok ? '已安全保存' : b.status === 'declined' ? '已拒绝' : '未作答'
+          el.innerHTML =
+            cardHeader(b) +
+            `<div class="resolved ${ok ? 'ok' : ''}">${icon(ok ? 'check' : 'x')}<span>${text}</span></div>`
+          return
+        }
+        el.innerHTML =
+          cardHeader(b) +
+          `<div class="card-row"><button type="button" class="btn btn-outline" data-act="open">打开 ${esc(new URL(b.url).host)} ${icon('ext')}</button></div>` +
+          `<div class="card-row"><input class="input" type="password" autocomplete="off" spellcheck="false" aria-label="${esc(b.label)}" placeholder="${esc(b.placeholder)}"><button type="submit" class="btn btn-primary" disabled>安全保存</button></div>` +
+          `<div class="card-row between"><span class="note" data-note>${icon('shield')}<span>不会出现在对话中，本对话里的命令可在 24 小时内使用。</span></span><button type="button" class="btn btn-ghost" data-act="decline">拒绝</button></div>`
+        const input = $('input', el)
+        const save = $('button[type=submit]', el)
+        input.addEventListener('input', () => (save.disabled = !input.value))
+        setTimeout(() => input.focus({ preventScroll: true }), 50)
+        el.addEventListener('submit', (e) => {
+          e.preventDefault()
+          if (!input.value) return
+          const value = input.value
+          input.value = ''
+          submit({ status: 'provided', value }, 'desktop')
+        })
+        $('[data-act=decline]', el).addEventListener('click', () =>
+          submit({ status: 'declined' }, 'desktop')
+        )
+        $('[data-act=open]', el).addEventListener('click', () =>
+          flashNote(el, `（原型）会用系统浏览器打开 ${b.url}`)
+        )
+      }
+      function flashNote(el, msg) {
+        const note = $('[data-note] span', el)
+        if (!note) return
+        const prev = note.textContent
+        note.textContent = msg
+        setTimeout(() => note.isConnected && (note.textContent = prev), 2200)
+      }
+
+      function submit(params, conn) {
+        if (!state.pending) return
+        const frame = {
+          dir: '←',
+          name: 'agent.secret.submit',
+          conn,
+          payload: { requestId: state.block.requestId, ...params }
+        }
+        if (conn !== 'desktop') {
+          frame.rejected = true
+          state.frames.push(frame, { dir: '→', name: '响应', conn, payload: { ok: false } })
+          renderInspector()
+          return
+        }
+        state.frames.push(frame, { dir: '→', name: '响应', conn, payload: { ok: true } })
+        state.pending(params)
+      }
+      function settleFromRuntime(status) {
+        if (state.pending) state.pending({ status })
+      }
+
+      // ---------- tool-result text: same strings as request-secret/tool.ts ----------
+      function formatOutcome(status, channel) {
+        switch (status) {
+          case 'provided':
+            return `[request_secret] The user provided "${NAME}". It is available to every bash command in this conversation as the environment variable ${ENV}; reference it as $${ENV}. You never see the value: tool output that contains it shows [REDACTED:${NAME}]. Do not print it, write it into files or chat, or pass it to a command that stores it unless the user asked for that. It is kept for this session only (at most 24 hours).${channel ? " The user's reply was kept out of this conversation, but it remains in the chat app's own history." : ''}`
+          case 'declined':
+            return `[request_secret] The user declined to provide "${NAME}". Do not ask again unless they bring it up; continue without it or explain what is blocked.`
+          case 'timeout':
+            return `[request_secret] The user did not respond in time; no value was provided for "${NAME}".`
+          default:
+            return `[request_secret] The request for "${NAME}" was dismissed because the turn was interrupted. No value was provided.`
+        }
+      }
+
+      // ---------- inspector ----------
+      const mask = (v) => `•••• (${v.length} 个字符)`
+      function renderInspector() {
+        $('#i-result').innerHTML = state.result
+          ? `<pre>${esc(state.result)}</pre>`
+          : '<span class="empty">卡片还没结束</span>'
+        if (state.scenario === 'channel' && state.frames.length) {
+          $('#i-block').innerHTML =
+            '<pre>用户：帮我用 GitHub API 查一下我的账号信息\nCola：（工具调用 request_secret，结果见上）\n\n用户回复 token 的那条消息不在这里：它在变成对话之前就被拦下了。</pre>'
+        } else if (state.block) {
+          const { label, reason, url, name, status } = state.block
+          const stored = {
+            卡片: label,
+            说明: reason,
+            链接: url,
+            名字: name,
+            ...(status ? { 状态: status } : {})
+          }
+          $('#i-block').innerHTML = `<pre>${esc(JSON.stringify(stored, null, 2))}</pre>`
+        } else $('#i-block').innerHTML = '<span class="empty">还没有</span>'
+
+        $('#i-frames').innerHTML = state.frames.length
+          ? state.frames
+              .map((f) => {
+                const hasValue = typeof f.payload.value === 'string'
+                const shown = hasValue ? { ...f.payload, value: mask(f.payload.value) } : f.payload
+                return `<div class="frame ${f.rejected ? 'rejected' : ''}"><div class="frame-h"><span class="dir">${f.dir}</span><span>${esc(f.name)}</span>${hasValue ? '<span class="tag plain">含明文</span>' : ''}${f.rejected ? '<span>无效：不是弹出卡片的那个窗口</span>' : ''}</div><pre>${esc(typeof shown.text === 'string' && Object.keys(shown).length === 1 ? shown.text : JSON.stringify(shown, null, 2))}</pre></div>`
+              })
+              .join('')
+          : '<span class="empty">暂无</span>'
+
+        $('#i-store').innerHTML = state.store.length
+          ? state.store
+              .map((s) => {
+                const lines = [
+                  `名字：  ${s.name}`,
+                  `会话：  ${state.scenario === 'channel' ? '飞书私聊' : '桌面端主对话'}`,
+                  `值：    ${mask(s.value)}`,
+                  `过期：  ${s.expires}`
+                ]
+                const warn =
+                  s.value.length < MIN_REDACT_LENGTH ? '\n\n⚠ 少于 4 个字符，输出里不会被替换' : ''
+                return `<div class="frame"><div class="frame-h"><span class="tag plain">含明文</span><span class="dir">只在 Cola 后台进程里</span></div><pre>${esc(lines.join('\n') + warn)}</pre></div>`
+              })
+              .join('')
+          : '<span class="empty">空</span>'
+      }
+
+      // ---------- scenario script ----------
+      const DECLINE_REPLIES = new Set(['取消', '拒绝', '不给', 'cancel', 'decline', 'no'])
+      // Same wording as request-secret/channel.ts posts to the chat.
+      const CHANNEL_ASK = [
+        CARD.label,
+        CARD.reason,
+        CARD.url,
+        '',
+        '请直接回复这条消息把它发给我。你的回复不会进入对话记录，也不会发给 AI 模型，只在本会话的命令里使用（最多 24 小时）。它仍会留在聊天软件自己的记录里，用完可以删掉。回复「取消」可以拒绝。'
+      ].join('\n')
+
+      function setSimEnabled(on, channel) {
+        document.querySelectorAll('[data-sim]').forEach((b) => {
+          // Another desktop window answering only makes sense for the card.
+          b.disabled = !on || (channel && b.dataset.sim === 'foreign')
+        })
+      }
+
+      function waitForUser(channel) {
+        setSimEnabled(true, channel)
+        $('#composer').hidden = !channel
+        if (channel) setTimeout(() => $('#composer-input').focus({ preventScroll: true }), 50)
+        return new Promise((resolve) => (state.pending = resolve)).finally(() => {
+          state.pending = null
+          setSimEnabled(false)
+          $('#composer').hidden = true
+        })
+      }
+
+      async function run() {
+        const id = ++runId
+        if (state.pending) state.pending = null
+        setSimEnabled(false)
+        $('#composer').hidden = true
+        Object.assign(state, { block: null, result: null, frames: [], store: [] })
+        chat.innerHTML = ''
+        const s = state.scenario
+        const channel = s === 'channel'
+        $('#app-title').textContent = channel ? '飞书 · 与 Cola 的私聊' : 'Cola · 主对话'
+        renderInspector()
+        try {
+          if (s === 'paste') userMsg(`帮我用 GitHub API 查一下我的账号信息，token 是 ${PASTED}`)
+          else userMsg('帮我用 GitHub API 查一下我的账号信息')
+          await sleep(500)
+          guard(id)
+
+          let outcome
+          let row = null
+          if (channel) {
+            // Channels have no card: Cola posts the ask and takes the next reply.
+            botMsg('调用 GitHub API 需要你的个人访问令牌。')
+            await sleep(500)
+            guard(id)
+            botMsg(CHANNEL_ASK)
+            state.frames.push({ dir: '→', name: 'Cola 发到飞书', payload: { text: CHANNEL_ASK } })
+            renderInspector()
+            outcome = await waitForUser(true)
+            guard(id)
+          } else {
+            await say(
+              id,
+              s === 'paste'
+                ? '先提醒一下：你刚才把 token 直接发在了聊天里，它已经留在对话记录中，也发给了模型。建议到 GitHub 撤销它，然后在下面的卡片里提供一个新的。'
+                : '调用 GitHub API 需要你的个人访问令牌。我弹一张安全卡片给你，令牌不会出现在对话里。'
+            )
+            row = toolRow('request_secret', CARD.label)
+            await sleep(300)
+            guard(id)
+            state.block = { requestId: `secret-${Date.now()}-1`, ...CARD }
+            state.frames.push({ dir: '→', name: 'Cola 弹出卡片', payload: { ...CARD } })
+            const cardEl = document.createElement('form')
+            cardEl.className = 'card'
+            cardEl.autocomplete = 'off'
+            chat.append(cardEl)
+            renderCard(cardEl, state.block)
+            renderInspector()
+            scrollDown()
+            outcome = await waitForUser(false)
+            guard(id)
+            state.block.status = outcome.status
+            renderCard(cardEl, state.block)
+          }
+
+          if (outcome.status === 'provided') {
+            state.store.push({
+              name: NAME,
+              value: outcome.value,
+              expires: new Date(Date.now() + 864e5).toLocaleString('zh-CN', { hour12: false })
+            })
+          }
+          state.result = formatOutcome(outcome.status, channel)
+          if (row) row.done(state.result)
+          renderInspector()
+          await sleep(400)
+          guard(id)
+
+          const reply = channel ? async (t) => botMsg(t) : (t) => say(id, t)
+          if (outcome.status === 'declined') {
+            await reply(
+              '好的，不用 token 的话我没法读取你的账号信息。你也可以直接打开 github.com 的个人主页查看。'
+            )
+            return
+          }
+          if (outcome.status !== 'provided') {
+            if (outcome.status === 'timeout') {
+              await reply('等了很久没收到 token，我先停在这里。需要时再叫我。')
+            }
+            return
+          }
+
+          // Channel users see only the final reply; the desktop shows tool rows.
+          if (channel) {
+            await sleep(900)
+            guard(id)
+          } else {
+            await say(id, 'Token 已就绪，开始调用。')
+            const ref = `$${ENV}`
+            const body = JSON.stringify(
+              {
+                login: 'octo-reviewer',
+                id: 1234567,
+                name: 'Cola Reviewer',
+                public_repos: 42,
+                created_at: '2019-03-14T08:00:00Z'
+              },
+              null,
+              2
+            )
+            await runBash(
+              id,
+              `curl -s -H "Authorization: Bearer ${ref}" https://api.github.com/user`,
+              body + '\n'
+            )
+            if (state.leak) {
+              await say(id, '再确认一下请求头是否带上了：')
+              const v = outcome.value
+              await runBash(
+                id,
+                `curl -sv -H "Authorization: Bearer ${ref}" https://api.github.com/user 2>&1 | grep -i authorization; printf %s "${ref}" | base64`,
+                `> authorization: Bearer ${v}\r\n${utf8Base64(v)}\n`
+              )
+            }
+          }
+          await reply(
+            '你的 GitHub 账号是 octo-reviewer（Cola Reviewer），有 42 个公开仓库，2019 年注册。'
+          )
+        } catch (err) {
+          if (err !== CANCEL) throw err
+        }
+      }
+
+      // ---------- controls ----------
+      function bindSeg(id, onChange) {
+        const seg = $(id)
+        seg.addEventListener('click', (e) => {
+          const b = e.target.closest('button')
+          if (!b) return
+          seg
+            .querySelectorAll('button')
+            .forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
+          onChange(b.dataset.v)
+        })
+      }
+      bindSeg('#scenario', (v) => {
+        state.scenario = v
+        run()
+      })
+      bindSeg('#theme', (v) => {
+        if (v === 'auto') document.documentElement.removeAttribute('data-theme')
+        else document.documentElement.setAttribute('data-theme', v)
+      })
+      $('#leak').addEventListener('change', (e) => (state.leak = e.target.checked))
+      $('#restart').addEventListener('click', run)
+      $('#composer').addEventListener('submit', (e) => {
+        e.preventDefault()
+        const input = $('#composer-input')
+        const text = input.value.trim()
+        if (!text || !state.pending) return
+        input.value = ''
+        if (DECLINE_REPLIES.has(text.toLowerCase())) {
+          userMsg(text, 'Cola 当作拒绝处理，这条也不进对话记录。')
+          state.frames.push({ dir: '←', name: '用户在飞书回复（已拦下）', payload: { text } })
+          state.pending({ status: 'declined' })
+        } else {
+          userMsg(text, 'Cola 已拦下：这条不进对话记录，也不发给模型。它仍留在飞书的聊天记录里。')
+          state.frames.push({
+            dir: '←',
+            name: '用户在飞书回复（已拦下）',
+            payload: { value: text }
+          })
+          state.pending({ status: 'provided', value: text })
+        }
+      })
+      $('#sim').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-sim]')
+        if (!b || b.disabled) return
+        if (b.dataset.sim === 'timeout') settleFromRuntime('timeout')
+        else if (b.dataset.sim === 'abort') settleFromRuntime('aborted')
+        else submit({ status: 'provided', value: 'ghp_injected_by_other_client' }, 'cli')
+      })
+
+      run()
+    </script>
+  </body>
+</html>
