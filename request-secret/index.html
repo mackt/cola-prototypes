@@ -1168,7 +1168,7 @@
       function formatOutcome(status) {
         switch (status) {
           case 'provided':
-            return `[request_secret] The user provided "${NAME}". It is available to every bash command in this conversation as the environment variable ${ENV}; reference it as $${ENV}. You never see the value: tool output that contains it shows [REDACTED:${NAME}]. Do not print it, write it into files or chat, or pass it to a command that stores it unless the user asked for that. It is kept for this session only (at most 24 hours).`
+            return `[request_secret] The user provided "${NAME}". It is available to every bash command in this conversation as the environment variable ${ENV}; reference it as $${ENV}. You never see the value: tool output that contains it shows [REDACTED:${NAME}]. Do not print it, write it into files or chat, or pass it to a command that stores it unless the user asked for that. When the user wants it saved (e.g. in an MCP server's config), write it from the variable in a command (jq --arg); never rewrite a file from content you read back, which shows [REDACTED:${NAME}] in place of the value and would overwrite it. It is kept for this session only (at most 24 hours).`
           case 'declined':
             return `[request_secret] The user declined to provide "${NAME}". Do not ask again unless they bring it up; continue without it or explain what is blocked.`
           case 'timeout':
