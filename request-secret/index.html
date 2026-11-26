@@ -27,6 +27,8 @@
         --bad: #b42318;
         --redact-bg: rgba(161, 92, 7, 0.14);
         --plain-bg: rgba(180, 35, 24, 0.1);
+        --ref: #2f5fb3;
+        --ref-bg: rgba(47, 95, 179, 0.09);
         --ui:
           -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
           sans-serif;
@@ -503,320 +505,278 @@
         color: var(--bad);
       }
 
-      /* ---------- data-flow diagram ---------- */
-      .df {
+      /* ---------- data-flow walkthrough ---------- */
+      .dfx {
         border: 1px solid var(--cola-border);
         border-radius: 12px;
         background: var(--cola-bg);
         padding: 18px 18px 14px;
       }
-      .df-map {
+      .dfx-stage {
         position: relative;
         display: grid;
-        grid-template-columns: minmax(0, 3.2fr) 64px minmax(0, 1fr) 34px minmax(0, 1fr);
-        grid-template-areas:
-          'local gate cola link llm'
-          'gh . . . .';
-        padding-top: 12px;
+        grid-template-columns: minmax(0, 1.5fr) 46px minmax(0, 1fr);
       }
-      .df-zone {
-        display: flex;
-        flex-direction: column;
+      .dfx-local {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        align-content: start;
+        gap: 10px;
         border: 1px solid var(--cola-border-strong);
         border-radius: 12px;
-        padding: 10px 12px 12px;
         background: var(--cola-bg-surface);
-        transition: border-color 0.3s;
+        padding: 10px 12px 12px;
       }
-      .df-zone.on {
-        border-color: var(--cola-text-strong);
-      }
-      .df-zone.local {
-        grid-area: local;
-      }
-      .df-zone.cola {
-        grid-area: cola;
-      }
-      .df-zone.llm {
-        grid-area: llm;
-      }
-      .df-zh {
+      .dfx-lh {
+        grid-column: 1 / -1;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 2px 6px;
-        height: 42px;
-        margin-bottom: 10px;
         font-size: 13.5px;
         color: var(--cola-text-strong);
       }
-      .df-zh small {
+      .dfx-lh small {
         flex-basis: 100%;
         font-size: 11.5px;
         color: var(--cola-text-muted);
       }
-      .df-zone > .df-node {
-        flex: 1;
+      .dfx-wide {
+        grid-column: 1 / -1;
       }
-      .df-row {
-        flex: 1;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 30px minmax(0, 1fr) 30px minmax(0, 1fr);
+      .dfx-net {
+        position: relative;
       }
-      .df-node {
+      .dfx-net::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        border-left: 2px dashed var(--cola-border-strong);
+      }
+      .dfx-net span {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        writing-mode: vertical-rl;
+        letter-spacing: 2px;
+        background: var(--cola-bg);
+        padding: 8px 2px;
+        font-size: 11.5px;
+        color: var(--cola-text-muted);
+      }
+      .dfx-remote {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .dfx-box {
         min-width: 0;
-        text-align: left;
-        font: inherit;
-        color: var(--cola-text);
         border: 1px solid var(--cola-border-strong);
         border-radius: 10px;
-        padding: 14px 12px 12px;
         background: var(--cola-bg);
-        cursor: pointer;
-        opacity: 0.5;
+        padding: 10px 12px 12px;
+        opacity: 0.55;
         transition:
           opacity 0.3s,
           border-color 0.3s,
           box-shadow 0.3s;
       }
-      .df-node.ext {
+      .dfx-remote .dfx-box {
+        background: var(--cola-bg-surface);
+      }
+      .dfx-box.ext {
         border-style: dashed;
       }
-      .df-node.done {
-        opacity: 0.85;
-      }
-      .df-node.on {
+      .dfx-box.on {
         opacity: 1;
         border-color: var(--cola-text-strong);
         box-shadow: 0 0 0 3px var(--cola-border);
       }
-      .df-node b {
+      .dfx-bh {
         display: flex;
-        gap: 6px;
         align-items: center;
-        font-size: 13.5px;
+        gap: 6px;
+        margin-bottom: 8px;
+        font-size: 13px;
+        font-weight: 600;
         color: var(--cola-text-strong);
       }
-      .df-node small {
+      .dfx-bh .tag {
+        margin-left: auto;
+      }
+      .dfx-body {
+        font-size: 12.5px;
+      }
+      .dfx-body small {
         display: block;
-        margin-top: 4px;
-        font-size: 12px;
+        margin-top: 6px;
+        font-size: 11.5px;
         color: var(--cola-text-muted);
       }
-      .df-gap {
-        display: flex;
-        align-items: center;
-        padding: 63px 0 13px;
-      }
-      .df-gap.gate {
-        grid-area: gate;
-      }
-      .df-gap.link {
-        grid-area: link;
-      }
-      .df-gh {
-        grid-area: gh;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 30px minmax(0, 1fr) 30px minmax(0, 1fr);
-        padding: 0 13px;
-      }
-      .df-ghcol {
-        grid-column: 5;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-      .df-ghcol .df-node {
-        align-self: stretch;
-      }
-      .df-link {
-        --c: var(--cola-border-strong);
-        position: relative;
-        flex: 1;
-        height: 2px;
-        align-self: center;
-        background: repeating-linear-gradient(90deg, var(--c) 0 4px, transparent 4px 8px);
-      }
-      .df-link::after {
-        content: '';
-        position: absolute;
-        right: -1px;
-        top: -4px;
-        border-left: 6px solid var(--c);
-        border-top: 5px solid transparent;
-        border-bottom: 5px solid transparent;
-      }
-      .df-link.lit {
-        --c: var(--bad);
-      }
-      .df-link.lit.ok {
-        --c: var(--ok);
-      }
-      .df-link > span {
-        position: absolute;
-        left: 50%;
-        top: -24px;
-        transform: translateX(-50%);
-        white-space: nowrap;
-        font-size: 11px;
+      .dfx-k {
+        display: block;
+        margin: 8px 0 3px;
+        font-size: 11.5px;
         color: var(--cola-text-muted);
-        border: 1px solid currentColor;
-        border-radius: 4px;
-        padding: 0 5px;
-        background: var(--cola-bg);
       }
-      .df-link.ok > span {
+      .dfx-k:first-child {
+        margin-top: 0;
+      }
+      .dfx-code {
+        font: 12px/1.55 var(--mono);
+        background: var(--code-bg);
+        border-radius: 6px;
+        padding: 5px 8px;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+      .dfx-term-body {
+        min-height: 232px;
+      }
+      .dfx-llm-body {
+        min-height: 178px;
+      }
+      .dfx-p,
+      .dfx-s,
+      .dfx-v {
+        border-radius: 3px;
+        padding: 0 3px;
+      }
+      .dfx-p {
+        color: var(--bad);
+        background: var(--plain-bg);
+      }
+      .dfx-s {
         color: var(--ok);
+        background: rgba(47, 125, 79, 0.1);
       }
-      .df-link.v {
-        flex: 0 0 38px;
-        width: 2px;
-        height: auto;
-        background: repeating-linear-gradient(180deg, var(--c) 0 4px, transparent 4px 8px);
+      .dfx-v {
+        color: var(--ref);
+        background: var(--ref-bg);
       }
-      .df-link.v::after {
-        right: auto;
-        top: auto;
-        left: -4px;
-        bottom: -1px;
-        border-top: 6px solid var(--c);
-        border-left: 5px solid transparent;
-        border-right: 5px solid transparent;
-        border-bottom: 0;
+      .dfx-input {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--cola-border-strong);
+        border-radius: 6px;
+        padding: 5px 8px;
+        background: var(--cola-bg);
+        font: 12px var(--mono);
       }
-      .df-link.v > span {
-        left: 10px;
-        top: 50%;
-        transform: translateY(-50%);
+      .dfx-ok {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--ok);
+        font-weight: 500;
       }
-      .df-packet {
+      .dfx-fly {
         position: absolute;
         left: 0;
         top: 0;
-        z-index: 1;
-        white-space: nowrap;
+        z-index: 2;
         pointer-events: none;
+        white-space: nowrap;
         font: 11.5px var(--mono);
-        padding: 2px 9px;
+        padding: 3px 10px;
         border-radius: 999px;
-        color: var(--bad);
         background: var(--cola-bg);
         box-shadow:
           inset 0 0 0 1px currentColor,
-          0 1px 4px rgba(0, 0, 0, 0.08);
-        transition:
-          transform 0.8s cubic-bezier(0.4, 0, 0.2, 1),
-          opacity 0.3s,
-          color 0.3s;
+          0 2px 8px rgba(0, 0, 0, 0.12);
+        opacity: 0;
       }
-      .df-packet.safe {
+      .dfx-fly.p {
+        color: var(--bad);
+      }
+      .dfx-fly.s {
         color: var(--ok);
       }
-      .df-caption {
-        margin: 16px 0 0;
-        min-height: 44px;
-        font-size: 13.5px;
+      .dfx-fly.v {
+        color: var(--ref);
       }
-      .df-caption b {
-        font: 12px var(--mono);
-        color: var(--cola-text-muted);
-        margin-right: 6px;
-      }
-      .df-foot {
+      .dfx-ctl {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
-        justify-content: space-between;
         align-items: center;
-        margin-top: 10px;
-        padding-top: 12px;
-        border-top: 1px solid var(--cola-border);
-        font-size: 12.5px;
-        color: var(--cola-text-muted);
+        justify-content: space-between;
+        margin-top: 16px;
       }
-      .df-never {
+      .dfx-steps {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
-        align-items: center;
+        margin: 0;
+        padding: 0;
+        list-style: none;
       }
-      .df-chip {
-        display: inline-flex;
-        gap: 4px;
-        align-items: center;
+      .dfx-steps button {
+        font: 12px var(--ui);
+        color: var(--cola-text-muted);
         border: 1px solid var(--cola-border-strong);
         border-radius: 999px;
-        padding: 1px 9px 1px 7px;
+        background: var(--cola-bg);
+        padding: 2px 10px;
+        cursor: pointer;
+      }
+      .dfx-steps button.done {
         color: var(--cola-text);
-        transition:
-          color 0.3s,
-          border-color 0.3s,
-          background 0.3s;
       }
-      .df-chip.hit {
-        color: var(--ok);
-        border-color: var(--ok);
-        background: rgba(47, 125, 79, 0.08);
+      .dfx-steps button[aria-current='step'] {
+        color: var(--cola-accent-fg);
+        background: var(--cola-accent);
+        border-color: var(--cola-accent);
       }
-      /* Narrow: the machine on top, then the token's two exits side by side. */
+      .dfx-cap {
+        margin-top: 12px;
+        min-height: 64px;
+        font-size: 13.5px;
+      }
+      .dfx-cap b {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--cola-text-strong);
+      }
+      .dfx-cap p {
+        margin: 0;
+      }
+      /* Narrow: your computer on top, the network, then the far side. */
       @media (max-width: 900px) {
-        .df {
+        .dfx {
           padding: 14px 14px 12px;
         }
-        .df-map {
-          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-          column-gap: 10px;
-          grid-template-areas:
-            'local local'
-            'gh gate'
-            'gh cola'
-            'gh link'
-            'gh llm';
-        }
-        .df-zh {
-          height: auto;
-        }
-        .df-row {
+        .dfx-stage,
+        .dfx-local {
           grid-template-columns: minmax(0, 1fr);
-          grid-template-rows: auto 24px auto 24px auto;
         }
-        .df-gap {
-          flex-direction: column;
-          padding: 0;
-          height: 38px;
+        .dfx-net {
+          height: 46px;
         }
-        .df-gh {
-          display: block;
-          padding: 0;
-        }
-        .df-link {
-          justify-self: center;
-          align-self: stretch;
-          width: 2px;
-          height: auto;
-          background: repeating-linear-gradient(180deg, var(--c) 0 4px, transparent 4px 8px);
-        }
-        .df-link::after {
-          right: auto;
-          top: auto;
-          left: -4px;
-          bottom: -1px;
-          border-top: 6px solid var(--c);
-          border-left: 5px solid transparent;
-          border-right: 5px solid transparent;
-          border-bottom: 0;
-        }
-        .df-link > span {
-          left: 10px;
+        .dfx-net::before {
+          left: 0;
+          right: 0;
           top: 50%;
-          transform: translateY(-50%);
+          bottom: auto;
+          border-left: 0;
+          border-top: 2px dashed var(--cola-border-strong);
+        }
+        .dfx-net span {
+          writing-mode: horizontal-tb;
+          letter-spacing: 0;
+          padding: 0 8px;
+        }
+        .dfx-term-body,
+        .dfx-llm-body {
+          min-height: 0;
         }
       }
       @media (prefers-reduced-motion: reduce) {
-        .df-packet,
-        .df-node,
-        .df-zone,
-        .df-chip {
+        .dfx-box {
           transition: none;
         }
       }
@@ -1011,101 +971,70 @@
       <section aria-labelledby="flow-h">
         <h2 id="flow-h">二、值经过哪里</h2>
         <p class="sub">
-          三块区域：你的电脑、Cola 服务器、LLM
-          服务器。红色是明文，绿色是已脱敏。点任意一步可以停下来看。
+          跟着一次真实的请求走一遍：每一处实际拿到的是什么。红色是明文，蓝色是变量名，绿色是脱敏后的占位符。
         </p>
-        <div class="df" id="df">
-          <div class="df-map" id="df-map">
-            <div class="df-zone local">
-              <div class="df-zh">
+        <div class="dfx" id="dfx">
+          <div class="dfx-stage" id="dfx-stage">
+            <div class="dfx-local">
+              <div class="dfx-lh">
                 <b>用户本地</b><span class="tag plain">有明文</span>
                 <small>你的电脑：Cola 桌面端和后台进程都在这里</small>
               </div>
-              <div class="df-row">
-                <button type="button" class="df-node" data-i="0">
-                  <b
-                    ><svg class="i" aria-hidden="true"><use href="#i-key" /></svg>安全卡片</b
-                  >
-                  <small>你在这里填入 token</small>
-                </button>
-                <span class="df-link" data-to="1" aria-hidden="true"></span>
-                <button type="button" class="df-node" data-i="1">
-                  <b
-                    ><svg class="i" aria-hidden="true"><use href="#i-chip" /></svg>Cola 后台</b
-                  >
-                  <small>只放在内存里，24 小时过期</small>
-                </button>
-                <span class="df-link" data-to="2" aria-hidden="true"></span>
-                <button type="button" class="df-node" data-i="2">
-                  <b
-                    ><svg class="i" aria-hidden="true"><use href="#i-term" /></svg>命令</b
-                  >
-                  <small>用环境变量拿到值</small>
-                </button>
+              <div class="dfx-box" id="dfx-card">
+                <div class="dfx-bh">
+                  <svg class="i" aria-hidden="true"><use href="#i-key" /></svg>安全卡片
+                </div>
+                <div class="dfx-body"></div>
+              </div>
+              <div class="dfx-box" id="dfx-mem">
+                <div class="dfx-bh">
+                  <svg class="i" aria-hidden="true"><use href="#i-chip" /></svg>Cola 后台 · 内存
+                </div>
+                <div class="dfx-body"></div>
+              </div>
+              <div class="dfx-box dfx-wide" id="dfx-term">
+                <div class="dfx-bh">
+                  <svg class="i" aria-hidden="true"><use href="#i-term" /></svg>命令
+                </div>
+                <div class="dfx-body dfx-term-body"></div>
               </div>
             </div>
-            <div class="df-gap gate">
-              <span class="df-link ok" data-to="4" aria-hidden="true"><span>脱敏</span></span>
-            </div>
-            <div class="df-zone cola">
-              <div class="df-zh">
-                <b>Cola 服务器</b><span class="tag safe">只见占位符</span>
-                <small>用 Cola 自带模型时经过</small>
-              </div>
-              <button type="button" class="df-node" data-i="4">
-                <b
-                  ><svg class="i" aria-hidden="true"><use href="#i-server" /></svg>模型网关</b
-                >
-                <small>只转发对话</small>
-              </button>
-            </div>
-            <div class="df-gap link">
-              <span class="df-link ok" data-to="5" aria-hidden="true"></span>
-            </div>
-            <div class="df-zone llm">
-              <div class="df-zh">
-                <b>LLM 服务器</b><span class="tag safe">只见占位符</span>
-                <small>模型服务商</small>
-              </div>
-              <button type="button" class="df-node" data-i="5">
-                <b
-                  ><svg class="i" aria-hidden="true"><use href="#i-spark" /></svg>模型</b
-                >
-                <small>读对话，决定下一步</small>
-              </button>
-            </div>
-            <div class="df-gh">
-              <div class="df-ghcol">
-                <span class="df-link v" data-to="3" aria-hidden="true"><span>HTTPS</span></span>
-                <button type="button" class="df-node ext" data-i="3">
-                  <b
-                    ><svg class="i" aria-hidden="true"><use href="#i-globe" /></svg>GitHub API</b
+            <div class="dfx-net" aria-hidden="true"><span>网络</span></div>
+            <div class="dfx-remote">
+              <div class="dfx-box" id="dfx-cola">
+                <div class="dfx-bh">
+                  <svg class="i" aria-hidden="true"><use href="#i-server" /></svg>Cola 服务器<span
+                    class="tag safe"
+                    >无明文</span
                   >
-                  <small>你要访问的服务</small>
-                </button>
+                </div>
+                <div class="dfx-body"></div>
+              </div>
+              <div class="dfx-box" id="dfx-llm">
+                <div class="dfx-bh">
+                  <svg class="i" aria-hidden="true"><use href="#i-spark" /></svg>LLM 服务器<span
+                    class="tag safe"
+                    >无明文</span
+                  >
+                </div>
+                <div class="dfx-body dfx-llm-body"></div>
+              </div>
+              <div class="dfx-box ext" id="dfx-gh">
+                <div class="dfx-bh">
+                  <svg class="i" aria-hidden="true"><use href="#i-globe" /></svg>GitHub API<span
+                    class="tag plain"
+                    >收到 token</span
+                  >
+                </div>
+                <div class="dfx-body"></div>
               </div>
             </div>
-            <span class="df-packet" id="df-packet" aria-hidden="true"></span>
           </div>
-          <p class="df-caption" id="df-caption" aria-live="polite"></p>
-          <div class="df-foot">
-            <div class="df-never">
-              <span>始终拿不到值：</span>
-              <span class="df-chip" data-chip="transcript"
-                ><svg class="i" aria-hidden="true"><use href="#i-x" /></svg>对话记录</span
-              >
-              <span class="df-chip" data-chip="logs"
-                ><svg class="i" aria-hidden="true"><use href="#i-x" /></svg>日志</span
-              >
-              <span class="df-chip" data-chip="disk"
-                ><svg class="i" aria-hidden="true"><use href="#i-x" /></svg>磁盘</span
-              >
-              <span class="df-chip" data-chip="other"
-                ><svg class="i" aria-hidden="true"><use href="#i-x" /></svg>其他对话</span
-              >
-            </div>
-            <button class="tbtn" id="df-play" type="button">暂停</button>
+          <div class="dfx-ctl">
+            <ol class="dfx-steps" id="dfx-steps"></ol>
+            <button class="tbtn" id="dfx-play" type="button">暂停</button>
           </div>
+          <div class="dfx-cap" id="dfx-cap" aria-live="polite"></div>
         </div>
       </section>
 
@@ -1632,135 +1561,236 @@
         }
       }
 
-      // ---------- data-flow diagram ----------
+      // ---------- data-flow walkthrough ----------
       ;(() => {
-        const root = $('#df')
-        const map = $('#df-map')
-        const nodes = [...root.querySelectorAll('.df-node')].sort(
-          (a, b) => a.dataset.i - b.dataset.i
-        )
-        const zones = [...root.querySelectorAll('.df-zone')]
-        const links = [...root.querySelectorAll('.df-link')]
-        const packet = $('#df-packet')
-        const caption = $('#df-caption')
-        const playBtn = $('#df-play')
+        const root = $('#dfx')
+        const stage = $('#dfx-stage')
+        const capEl = $('#dfx-cap')
+        const stepsEl = $('#dfx-steps')
+        const playBtn = $('#dfx-play')
+        const box = (id) => $(`#dfx-${id}`)
+        const body = (id) => box(id).querySelector('.dfx-body')
+        const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
+
+        const TOKEN = 'ghp_7Fq2…Xk9d'
+        const P = (t) => `<span class="dfx-p">${t}</span>`
+        const S = (t) => `<span class="dfx-s">${t}</span>`
+        const V = (t) => `<span class="dfx-v">${t}</span>`
+        const VAR = '$COLA_SECRET_GITHUB_TOKEN'
+        const K = (t) => `<span class="dfx-k">${t}</span>`
+        const C = (t) => `<div class="dfx-code">${t}</div>`
+        const EMPTY = (t) => `<span class="empty">${t}</span>`
+
         const STEPS = [
           {
-            plain: true,
-            chips: [],
-            text: '你在 Cola 桌面端的卡片里填入 token。提交后输入框立刻清空，聊天框里不会出现；只有弹出卡片的那个窗口能提交。'
+            title: '你填入 token',
+            text: 'Cola 需要 GitHub token 时，在对话里弹出安全卡片。你把 token 填进卡片，而不是聊天框。',
+            on: ['card']
           },
           {
-            plain: true,
-            chips: ['transcript', 'logs', 'disk'],
-            text: '值交给同一台电脑上的 Cola 后台，只放在内存里：不写磁盘，不进日志，24 小时过期，退出即清空。对话记录里只有卡片标题和状态。'
+            title: '只交给你电脑上的 Cola 后台',
+            text: '值放进 Cola 后台的内存，作为环境变量给本对话的命令用。不写磁盘，不进日志和对话记录，24 小时后清除。',
+            on: ['card', 'mem'],
+            fly: { path: ['card', 'mem'], kind: 'p', label: TOKEN }
           },
           {
-            plain: true,
-            chips: ['other'],
-            text: '本对话里运行的命令通过环境变量 <code>$COLA_SECRET_GITHUB_TOKEN</code> 使用它，其他对话的命令拿不到。'
+            title: '告诉模型的只有变量名',
+            text:
+              '工具结果里写的是“token 在 ' +
+              VAR +
+              ' 里”，没有值。这条消息离开你的电脑，经过 Cola 服务器转给模型。',
+            on: ['mem', 'cola', 'llm'],
+            fly: { path: ['mem', 'cola', 'llm'], kind: 'v', label: VAR }
           },
           {
-            plain: true,
-            chips: [],
-            text: '命令从你的电脑直接把 token 发给 GitHub，走 HTTPS 加密。这是值唯一离开电脑的去处，不经过 Cola 服务器。'
+            title: '模型写命令，也只写变量名',
+            text: '模型回一条命令，用 ' + VAR + ' 引用 token。它自始至终不知道 token 是什么。',
+            on: ['llm', 'cola', 'term'],
+            fly: { path: ['llm', 'cola', 'term'], kind: 'v', label: 'curl … ' + VAR }
           },
           {
-            plain: false,
-            chips: [],
-            text: '命令输出回到 Cola 后台，值被换成 <code>[REDACTED:github_token]</code> 才发出去，base64、URL 编码后的形式也一样。Cola 服务器只负责转发，看到的是占位符。'
+            title: '在你的电脑上才换成真值',
+            text: '命令在你的电脑上运行时，shell 才把变量换成真正的 token，直接发给 GitHub（HTTPS），不经过 Cola 服务器。',
+            on: ['term', 'gh'],
+            fly: { path: ['term', 'gh'], kind: 'p', label: 'Bearer ' + TOKEN }
           },
           {
-            plain: false,
-            chips: [],
-            text: '模型服务商收到的也只有占位符。如果你用自己的 API Key，请求从电脑直接发给模型服务商，不经过 Cola 服务器，同样只有占位符。'
+            title: '输出先脱敏，再发出去',
+            text: '命令输出里如果带着 token（比如 curl -v 打印了请求头），离开电脑前换成 [REDACTED:github_token]，base64、URL 编码后的形式也一样。模型收到的只有占位符。',
+            on: ['term', 'cola', 'llm'],
+            fly: { path: ['term', 'cola', 'llm'], kind: 's', label: '[REDACTED:github_token]' }
           }
         ]
+
+        // What each place holds once step i has happened.
+        function fill(i) {
+          body('card').innerHTML =
+            i === 0
+              ? `<div class="dfx-input">${P(TOKEN)}</div><small>提交后输入框立刻清空</small>`
+              : `<div class="dfx-ok">${icon('check')}已安全保存</div><small>对话记录里只有卡片标题和状态</small>`
+          body('mem').innerHTML =
+            i === 0
+              ? EMPTY('空')
+              : `${K('COLA_SECRET_GITHUB_TOKEN')}${C(P(TOKEN))}<small>只在内存里，24 小时后清除</small>`
+          let term = EMPTY('等模型写命令')
+          if (i >= 3) {
+            term =
+              K('模型写的命令') +
+              C(`$ curl -sv -H "Authorization: Bearer ${V(VAR)}" https://api.github.com/user`)
+          }
+          if (i >= 4)
+            term += K('实际执行时（shell 展开变量）') + C(`Authorization: Bearer ${P(TOKEN)}`)
+          if (i >= 5) {
+            term +=
+              K('命令输出（原样，还在你的电脑上）') +
+              C(`> Authorization: Bearer ${P(TOKEN)}`) +
+              K('离开电脑前替换成') +
+              C(`> Authorization: Bearer ${S('[REDACTED:github_token]')}`)
+          }
+          body('term').innerHTML = term
+          const passing = {
+            2: '转发：工具结果（只有变量名）',
+            3: '转发：模型写的命令（只有变量名）',
+            4: '这一步不经过这里：命令直接连 GitHub',
+            5: '转发：命令输出（已脱敏）'
+          }
+          body('cola').innerHTML =
+            `<div>只转发对话，不存 token。</div>` +
+            (passing[i] ? `<small>${passing[i]}</small>` : '')
+          let llm = ''
+          if (i >= 2) llm += K('工具结果') + C(`token 在 ${V(VAR)} 里`)
+          if (i >= 3) llm += K('它写的命令') + C(`curl … Bearer ${V(VAR)} …`)
+          if (i >= 5)
+            llm += K('命令输出') + C(`Authorization: Bearer ${S('[REDACTED:github_token]')}`)
+          body('llm').innerHTML = llm || EMPTY('还没收到')
+          body('gh').innerHTML =
+            i >= 4
+              ? C(`GET /user\nAuthorization: Bearer ${P(TOKEN)}`) +
+                '<small>HTTPS 加密传输，这是 token 该去的地方</small>'
+              : EMPTY('还没被请求')
+        }
+
         let step = 0
         let timer = null
-        let playing = true
+        let playing = !reduced
         let visible = false
+        let flights = []
 
-        // Top-center of the current node, kept inside the diagram.
-        function place() {
-          const n = nodes[step].getBoundingClientRect()
-          const m = map.getBoundingClientRect()
-          const pw = packet.offsetWidth
-          const x = Math.max(0, Math.min(m.width - pw, n.left - m.left + (n.width - pw) / 2))
-          const y = n.top - m.top - packet.offsetHeight / 2
-          packet.style.transform = `translate(${x}px, ${y}px)`
-        }
-        function show(i, instant) {
-          step = i
-          const s = STEPS[i]
-          nodes.forEach((n, k) => {
-            n.classList.toggle('on', k === i)
-            n.classList.toggle('done', k < i)
+        STEPS.forEach((st, k) => {
+          const li = document.createElement('li')
+          li.innerHTML = `<button type="button" title="${st.title}">${k + 1}</button>`
+          li.firstChild.addEventListener('click', () => {
+            go(k, false)
+            setPlaying(false)
           })
-          zones.forEach((z) => z.classList.toggle('on', z.contains(nodes[i])))
-          links.forEach((l) => l.classList.toggle('lit', Number(l.dataset.to) === i))
-          packet.classList.toggle('safe', !s.plain)
-          packet.textContent = s.plain ? 'ghp_•••• 明文' : '[REDACTED:github_token]'
-          caption.innerHTML = `<b>${i + 1}/${STEPS.length}</b>${s.text}`
-          root
-            .querySelectorAll('.df-chip')
-            .forEach((c) => c.classList.toggle('hit', s.chips.includes(c.dataset.chip)))
-          if (instant) {
-            packet.style.transition = 'none'
-            place()
-            void packet.offsetWidth
-            packet.style.transition = ''
-          } else place()
-          packet.style.opacity = '1'
+          stepsEl.append(li)
+        })
+        const stepBtns = [...stepsEl.querySelectorAll('button')]
+
+        function stopFlights() {
+          flights.forEach((a) => a.cancel())
+          flights = []
+          stage.querySelectorAll('.dfx-fly').forEach((f) => f.remove())
         }
+
+        // A pill that travels box to box; resolves when it lands.
+        function fly({ path, kind, label }) {
+          const f = document.createElement('span')
+          f.className = `dfx-fly ${kind}`
+          f.textContent = label
+          stage.append(f)
+          const m = stage.getBoundingClientRect()
+          const w = f.offsetWidth
+          const h = f.offsetHeight
+          const pts = path.map((id) => {
+            const r = box(id).getBoundingClientRect()
+            const x = Math.max(0, Math.min(m.width - w, r.left - m.left + (r.width - w) / 2))
+            return `translate(${x}px, ${r.top - m.top + r.height / 2 - h / 2}px)`
+          })
+          const last = pts.length - 1
+          const frames = [{ transform: pts[0], opacity: 0, offset: 0 }]
+          pts.forEach((t, k) =>
+            frames.push({
+              transform: t,
+              opacity: 1,
+              offset: 0.08 + (0.84 * k) / last,
+              easing: 'ease-in-out'
+            })
+          )
+          frames.push({ transform: pts[last], opacity: 0, offset: 1 })
+          const a = f.animate(frames, {
+            duration: 700 + 900 * last,
+            fill: 'forwards'
+          })
+          flights.push(a)
+          return a.finished.then(
+            () => f.remove(),
+            () => {
+              f.remove()
+              throw new Error('cancelled')
+            }
+          )
+        }
+
+        function go(i, animate) {
+          clearTimeout(timer)
+          stopFlights()
+          step = i
+          const st = STEPS[i]
+          capEl.innerHTML = `<b>${i + 1}/${STEPS.length} · ${st.title}</b><p>${st.text}</p>`
+          stepBtns.forEach((b, k) => {
+            if (k === i) b.setAttribute('aria-current', 'step')
+            else b.removeAttribute('aria-current')
+            b.classList.toggle('done', k < i)
+          })
+          ;['card', 'mem', 'term', 'cola', 'llm', 'gh'].forEach((id) =>
+            box(id).classList.toggle('on', st.on.includes(id))
+          )
+          if (animate && st.fly && !reduced) {
+            fly(st.fly).then(
+              () => {
+                fill(i)
+                schedule()
+              },
+              () => {}
+            )
+          } else {
+            fill(i)
+            schedule()
+          }
+        }
+
         function schedule() {
           clearTimeout(timer)
           if (!playing || !visible) return
-          const last = step === STEPS.length - 1
-          timer = setTimeout(
-            () => {
-              if (!last) {
-                show(step + 1)
-                schedule()
-                return
-              }
-              packet.style.opacity = '0'
-              timer = setTimeout(() => {
-                show(0, true)
-                schedule()
-              }, 400)
-            },
-            last ? 3400 : 2600
-          )
+          const lastStep = step === STEPS.length - 1
+          timer = setTimeout(() => go(lastStep ? 0 : step + 1, true), lastStep ? 4200 : 2600)
         }
+
         function setPlaying(on) {
           playing = on
           playBtn.textContent = on ? '暂停' : '播放'
-          schedule()
+          if (on) go(step === STEPS.length - 1 ? 0 : step + 1, true)
+          else {
+            clearTimeout(timer)
+          }
         }
+        playBtn.addEventListener('click', () => setPlaying(!playing))
 
-        nodes.forEach((n, k) =>
-          n.addEventListener('click', () => {
-            show(k)
-            setPlaying(false)
-          })
-        )
-        playBtn.addEventListener('click', () => {
-          if (!playing && step === STEPS.length - 1) show(0, true)
-          setPlaying(!playing)
-        })
-        // Re-place the packet only when the diagram's width really changes.
-        let width = 0
+        // A flight in progress aims at old positions: land it at once. Nothing
+        // else depends on the width, so a resize never redraws the boxes.
         new ResizeObserver(() => {
-          if (root.clientWidth === width) return
-          width = root.clientWidth
-          show(step, true)
+          if (!flights.length) return
+          stopFlights()
+          fill(step)
+          schedule()
         }).observe(root)
         new IntersectionObserver(([entry]) => {
           visible = entry.isIntersecting
-          schedule()
+          if (visible) schedule()
+          else clearTimeout(timer)
         }).observe(root)
-        show(0, true)
+        go(0, false)
       })()
 
       // ---------- controls ----------
