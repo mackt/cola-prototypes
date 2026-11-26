@@ -855,25 +855,6 @@
       .tbl-wrap {
         overflow-x: auto;
       }
-      ol.q {
-        padding-left: 22px;
-        margin: 0;
-      }
-      ol.q li {
-        margin-bottom: 12px;
-      }
-      ol.q li p {
-        margin: 2px 0 0;
-        color: var(--cola-text-muted);
-        font-size: 14px;
-      }
-      ul.plain {
-        padding-left: 20px;
-        margin: 0;
-      }
-      ul.plain li {
-        margin-bottom: 6px;
-      }
       footer {
         margin-top: 48px;
         padding-top: 18px;
@@ -1136,66 +1117,6 @@
             </tbody>
           </table>
         </div>
-      </section>
-
-      <section aria-labelledby="q-h">
-        <h2 id="q-h">四、讨论结论</h2>
-        <ol class="q">
-          <li>
-            <b>只在本次对话里有效，最多 24 小时</b>
-            <p>
-              每个新对话都要重新填一次；配置 MCP
-              这类任务例外，值会写进配置文件长期使用。不做跨对话的「记住」：和 T3
-              一样，卡片上只有填写和拒绝，交互越少越好懂。
-            </p>
-          </li>
-          <li>
-            <b>卡片放在对话时间线里</b>
-            <p>不用弹窗，和气泡左对齐。</p>
-          </li>
-          <li>
-            <b>用户可以不理卡片，直接打字</b>
-            <p>
-              卡片自动变成「未作答」，Cola 读这条消息接着聊。超时只是兜底：T3 默认 10 分钟、最长 1
-              小时，我们现在是 30 分钟，待定。
-            </p>
-          </li>
-          <li>
-            <b>不担心 <code>ask_user_question</code> 下线的原因</b>
-            <p>那个工具下线是因为不想要一问一答式的交互，显得没人味，跟卡片的技术实现无关。</p>
-          </li>
-          <li>
-            <b>卡片文案照搬 T3</b>
-            <p>
-              按钮「安全保存 /
-              拒绝」，底部「安全存储，绝不会展示给智能体」，打开链接的按钮下面显示完整网址。
-            </p>
-          </li>
-        </ol>
-      </section>
-
-      <section aria-labelledby="limit-h">
-        <h2 id="limit-h">五、已知限制</h2>
-        <ul class="plain">
-          <li>少于 4 个字符的值不脱敏，否则会把普通输出改乱。</li>
-          <li>长时间运行的命令，输出末尾几十个字符会晚一点出现（为了识别被切成两段的值）。</li>
-          <li>
-            命令把值换成其他编码（比如 hex）打印出来，或者
-            <code>gh auth login</code> 这类命令把值存进自己的配置文件，拦不住。
-          </li>
-          <li>
-            写进配置文件（比如 MCP 的 <code>servers.json</code>）的值是明文，和用户手动配置一样。24
-            小时后或 Cola 重启后不再脱敏，Agent 再读这个文件会看到它。
-          </li>
-        </ul>
-      </section>
-
-      <section aria-labelledby="next-h">
-        <h2 id="next-h">六、二期计划</h2>
-        <ul class="plain">
-          <li>云端应用的 <code>set_secret</code> 改成按引用取值，不再让模型传明文。</li>
-          <li>Coding Cola、CLI 和手机端支持。</li>
-        </ul>
       </section>
 
       <footer>
