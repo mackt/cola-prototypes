@@ -391,6 +391,14 @@
         color: var(--cola-text-muted);
         white-space: pre-wrap;
       }
+      .card-url {
+        margin: 6px 0 0 24px;
+        font: 12px var(--mono);
+        color: var(--cola-text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
       .card-row {
         padding-left: 24px;
         margin-top: 10px;
@@ -971,7 +979,7 @@
           <span>等待用户提供时可以模拟：</span>
           <button class="tbtn" data-sim="timeout" disabled>30 分钟没人理</button>
           <button class="tbtn" data-sim="abort" disabled>用户点了停止</button>
-          <button class="tbtn" data-sim="foreign" disabled>另一个本地客户端抢答</button>
+          <button class="tbtn" data-sim="reply" disabled>用户没填卡片，直接打字</button>
         </div>
 
         <div class="demo">
@@ -1101,6 +1109,11 @@
                 <td>用户拒绝，别再追问，说明卡在哪</td>
               </tr>
               <tr>
+                <td>没填卡片，直接打字</td>
+                <td>卡片变成「未作答」，消息照常发出</td>
+                <td>用户发了消息、没给值，读消息接着聊</td>
+              </tr>
+              <tr>
                 <td>30 分钟没响应</td>
                 <td>卡片变成「未作答」</td>
                 <td>超时，没有拿到值</td>
@@ -1116,11 +1129,6 @@
                 <td>只知道变量名，用命令把变量写进配置，不碰明文</td>
               </tr>
               <tr>
-                <td>别人来提交</td>
-                <td>其他客户端提交无效，卡片继续等待</td>
-                <td>—</td>
-              </tr>
-              <tr>
                 <td>定时任务、后台任务</td>
                 <td>不会弹卡片，没人在等着回答</td>
                 <td>不可用，下次用户来时再说明需要什么</td>
@@ -1131,38 +1139,36 @@
       </section>
 
       <section aria-labelledby="q-h">
-        <h2 id="q-h">四、需要大家拍板的问题</h2>
+        <h2 id="q-h">四、讨论结论</h2>
         <ol class="q">
           <li>
-            <b>一期只保存在本次会话（最多 24 小时），够不够？</b>
+            <b>只在本次对话里有效，最多 24 小时</b>
             <p>
               每个新对话都要重新填一次；配置 MCP
-              这类任务例外，值会写进配置文件长期使用。不做跨对话的「记住」选项：和 T3
+              这类任务例外，值会写进配置文件长期使用。不做跨对话的「记住」：和 T3
               一样，卡片上只有填写和拒绝，交互越少越好懂。
             </p>
           </li>
           <li>
-            <b>卡片放在对话时间线里，还是用弹窗？</b>
+            <b>卡片放在对话时间线里</b>
+            <p>不用弹窗，和气泡左对齐。</p>
+          </li>
+          <li>
+            <b>用户可以不理卡片，直接打字</b>
             <p>
-              现在跟提问卡片一样放在时间线里，等待时输入框处于「等你回答」状态。弹窗更醒目，但会挡住上下文。
+              卡片自动变成「未作答」，Cola 读这条消息接着聊。超时只是兜底：T3 默认 10 分钟、最长 1
+              小时，我们现在是 30 分钟，待定。
             </p>
           </li>
           <li>
-            <b>超时 30 分钟合适吗？</b>
-            <p>卡片等待期间这一轮会占着会话；太短用户来不及去网站生成 token，太长会话会卡很久。</p>
+            <b>不担心 <code>ask_user_question</code> 下线的原因</b>
+            <p>那个工具下线是因为不想要一问一答式的交互，显得没人味，跟卡片的技术实现无关。</p>
           </li>
           <li>
-            <b>复用 <code>ask_user_question</code> 的卡片链路有没有坑？</b>
+            <b>卡片文案照搬 T3</b>
             <p>
-              那个工具在 #2910
-              被下线，提交里没写原因。需要知道当时的原因（@Shengbin），避免重复踩坑。
-            </p>
-          </li>
-          <li>
-            <b>卡片文案</b>
-            <p>
-              按钮「安全保存 / 拒绝」，底部说明「不会出现在对话中，本对话里的命令可在 24
-              小时内使用。」需要设计和产品过一下。
+              按钮「安全保存 /
+              拒绝」，底部「安全存储，绝不会展示给智能体」，打开链接的按钮下面显示完整网址。
             </p>
           </li>
         </ol>
@@ -1397,8 +1403,9 @@
         el.innerHTML =
           cardHeader(b) +
           `<div class="card-row"><button type="button" class="btn btn-outline" data-act="open">打开 ${esc(new URL(b.url).host)} ${icon('ext')}</button></div>` +
+          `<p class="card-url">${esc(b.url)}</p>` +
           `<div class="card-row"><input class="input" type="password" autocomplete="off" spellcheck="false" aria-label="${esc(b.label)}" placeholder="${esc(b.placeholder)}"><button type="submit" class="btn btn-primary" disabled>安全保存</button></div>` +
-          `<div class="card-row between"><span class="note" data-note>${icon('shield')}<span>不会出现在对话中，本对话里的命令可在 24 小时内使用。</span></span><button type="button" class="btn btn-ghost" data-act="decline">拒绝</button></div>`
+          `<div class="card-row between"><span class="note" data-note>${icon('shield')}<span>安全存储，绝不会展示给智能体</span></span><button type="button" class="btn btn-ghost" data-act="decline">拒绝</button></div>`
         const input = $('input', el)
         const save = $('button[type=submit]', el)
         input.addEventListener('input', () => (save.disabled = !input.value))
@@ -1453,6 +1460,8 @@
             return `[request_secret] The user provided "${NAME}". It is available to every bash command in this conversation as the environment variable ${ENV}; reference it as $${ENV}. You never see the value: tool output that contains it shows [REDACTED:${NAME}]. Do not print it, write it into files or chat, or pass it to a command that stores it unless the user asked for that. When the user wants it saved (e.g. in an MCP server's config), write it from the variable in a command (jq --arg); never rewrite a file from content you read back, which shows [REDACTED:${NAME}] in place of the value and would overwrite it. It is kept for this session only (at most 24 hours).`
           case 'declined':
             return `[request_secret] The user declined to provide "${NAME}". Do not ask again unless they bring it up; continue without it or explain what is blocked.`
+          case 'replied':
+            return `[request_secret] The user sent a message instead of filling in the card; no value was provided for "${NAME}". Read their message and go on from it.`
           case 'timeout':
             return `[request_secret] The user did not respond in time; no value was provided for "${NAME}".`
           default:
@@ -1563,6 +1572,10 @@
               id,
               '好的，不用 token 的话我没法读取你的账号信息。你也可以直接打开 github.com 的个人主页查看。'
             )
+            return
+          }
+          if (outcome.status === 'replied') {
+            await say(id, '好，那先不查了。之后要查的话随时叫我。')
             return
           }
           if (outcome.status !== 'provided') {
@@ -1848,7 +1861,10 @@
         if (!b || b.disabled) return
         if (b.dataset.sim === 'timeout') settleFromRuntime('timeout')
         else if (b.dataset.sim === 'abort') settleFromRuntime('aborted')
-        else submit({ status: 'provided', value: 'ghp_injected_by_other_client' }, 'cli')
+        else if (b.dataset.sim === 'reply') {
+          userMsg('算了，我先不查了')
+          settleFromRuntime('replied')
+        }
       })
 
       run()
