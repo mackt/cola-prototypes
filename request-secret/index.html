@@ -28,6 +28,9 @@
         --redact-bg: rgba(161, 92, 7, 0.14);
         --plain-bg: rgba(180, 35, 24, 0.1);
         --ref: #2f5fb3;
+        /* Message bubbles, as the desktop app draws them (colors.css). */
+        --bubble-cola: #f3f3f3;
+        --bubble-user: #fef1ea;
         --ref-bg: rgba(47, 95, 179, 0.09);
         --ui:
           -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
@@ -219,24 +222,60 @@
         padding: 20px 22px 28px;
         scroll-behavior: smooth;
       }
+      /* Bubbles mirror message-bubbles.css: Cola on gray with its avatar on the
+         first bubble of a reply, the user on a warm wash. Cards sit between
+         bubbles on their own, never inside one. */
       .msg-user {
         display: flex;
         flex-direction: column;
         align-items: flex-end;
-        margin: 4px 0 18px;
+        margin: 20px 0;
+      }
+      .msg-user:first-child {
+        margin-top: 0;
       }
       .msg-user .bubble {
-        max-width: 80%;
-        background: var(--cola-bg-surface);
-        border-radius: 14px;
-        padding: 8px 14px;
-        font-size: 14px;
+        max-width: 85%;
+        background: var(--bubble-user);
+        border-radius: 20px;
+        border-bottom-right-radius: 6px;
+        padding: 10px 16px;
+        font-size: 15px;
+        line-height: 1.55;
         overflow-wrap: anywhere;
       }
+      .a-bubble {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr);
+        column-gap: 8px;
+        align-items: start;
+        margin-bottom: 4px;
+      }
+      .avatar {
+        grid-area: 1 / 1;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--cola-text-strong);
+        color: #fff;
+        font: 600 13px var(--ui);
+      }
       .a-text {
-        font-size: 14px;
-        margin: 6px 0 10px;
+        grid-area: 1 / 2;
+        justify-self: start;
+        max-width: 85%;
+        background: var(--bubble-cola);
+        border-radius: 20px;
+        border-bottom-left-radius: 6px;
+        padding: 10px 16px;
+        font-size: 15px;
+        line-height: 1.55;
         overflow-wrap: anywhere;
+      }
+      .a-bubble + .a-bubble .a-text {
+        border-top-left-radius: 6px;
       }
       .a-text .caret {
         display: inline-block;
@@ -253,7 +292,7 @@
         }
       }
       .tool {
-        margin: 6px 0 10px;
+        margin: 8px 0 8px 36px;
         font-size: 13px;
       }
       .tool summary {
@@ -318,7 +357,7 @@
         border-radius: var(--cola-radius-card);
         background: var(--cola-bg-surface);
         padding: 12px 16px;
-        margin: 4px 0 12px;
+        margin: 8px 0 12px;
         animation: fade 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       }
       @keyframes fade {
@@ -1273,12 +1312,19 @@
         el.className = 'msg-user'
         el.innerHTML = `<div class="bubble">${esc(text)}</div>`
         chat.append(el)
+        state.needAvatar = true
         scrollDown()
       }
+      // One bubble per call; the avatar marks the first bubble of a reply.
       async function say(id, text) {
+        const wrap = document.createElement('div')
+        wrap.className = 'a-bubble'
+        if (state.needAvatar) wrap.innerHTML = '<span class="avatar" aria-hidden="true">C</span>'
+        state.needAvatar = false
         const el = document.createElement('div')
         el.className = 'a-text'
-        chat.append(el)
+        wrap.append(el)
+        chat.append(wrap)
         for (let i = 1; i <= text.length; i += 2) {
           guard(id)
           el.innerHTML = esc(text.slice(0, i)) + '<span class="caret"></span>'
