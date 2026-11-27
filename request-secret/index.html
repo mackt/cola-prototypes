@@ -158,12 +158,6 @@
         padding: 4px 10px;
         font-size: 13px;
       }
-      .chk {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-      }
       .sim {
         display: flex;
         flex-wrap: wrap;
@@ -343,6 +337,14 @@
         overflow-wrap: anywhere;
         max-height: 260px;
         overflow-y: auto;
+      }
+      .demo-note {
+        margin: 4px 0 12px 36px;
+        padding: 8px 10px;
+        border: 1px dashed var(--cola-border-strong);
+        border-radius: 8px;
+        font-size: 12.5px;
+        color: var(--cola-text-muted);
       }
       .redacted {
         background: var(--redact-bg);
@@ -950,9 +952,6 @@
         </p>
 
         <div class="controls" role="group" aria-label="原型设置">
-          <label class="chk"
-            ><input type="checkbox" id="leak" checked /> 模型不小心把 token 打印出来</label
-          >
           <button class="tbtn" id="restart">重新开始</button>
         </div>
 
@@ -1214,7 +1213,6 @@
       const NAME = 'github_token'
       const ENV = 'COLA_SECRET_GITHUB_TOKEN'
       const state = {
-        leak: true,
         block: null,
         result: null,
         frames: [],
@@ -1524,7 +1522,8 @@
             `curl -s -H "Authorization: Bearer ${ref}" https://api.github.com/user`,
             body + '\n'
           )
-          if (state.leak) {
+          // Shows output redaction: this command's output carries the token.
+          {
             await say(id, '再确认一下请求头是否带上了：')
             const v = outcome.value
             await runBash(
@@ -1532,6 +1531,13 @@
               `curl -sv -H "Authorization: Bearer ${ref}" https://api.github.com/user 2>&1 | grep -i authorization; printf %s "${ref}" | base64`,
               `> authorization: Bearer ${v}\r\n${utf8Base64(v)}\n`
             )
+            if (v.length < MIN_REDACT_LENGTH) {
+              const note = document.createElement('p')
+              note.className = 'demo-note'
+              note.textContent = `演示提示：「${v}」不到 ${MIN_REDACT_LENGTH} 个字符，太短的值不脱敏，否则输出里碰巧相同的普通文字也会被换掉。填个像样的 token（比如 ghp_demo1234）再试一次。`
+              chat.append(note)
+              scrollDown()
+            }
           }
           await say(
             id,
@@ -1775,7 +1781,6 @@
       })()
 
       // ---------- controls ----------
-      $('#leak').addEventListener('change', (e) => (state.leak = e.target.checked))
       $('#restart').addEventListener('click', run)
       $('#sim').addEventListener('click', (e) => {
         const b = e.target.closest('[data-sim]')
