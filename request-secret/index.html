@@ -356,8 +356,8 @@
       /* ---------- the secret card (mirrors SecretRequestBlock.tsx) ---------- */
       .card {
         border: 1px solid var(--cola-border);
-        border-radius: var(--cola-radius-card);
-        background: var(--cola-bg-surface);
+        border-radius: 20px;
+        background: #fff;
         padding: 14px 16px;
         /* Lined up with the bubbles, past the avatar column. */
         margin: 8px 0 12px 36px;
@@ -407,14 +407,6 @@
         color: var(--cola-text-muted);
         white-space: pre-wrap;
       }
-      .card-url {
-        margin: 6px 0 0;
-        font: 12px var(--mono);
-        color: var(--cola-text-muted);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
       .card-row {
         margin-top: 12px;
         display: flex;
@@ -423,10 +415,6 @@
       }
       .card-row.between {
         justify-content: space-between;
-      }
-      .card-actions {
-        display: flex;
-        gap: 6px;
       }
       .btn {
         display: inline-flex;
@@ -443,28 +431,42 @@
         background: var(--cola-accent);
         color: var(--cola-accent-fg);
       }
-      .btn-outline {
-        background: var(--cola-bg);
-        border-color: var(--cola-border-strong);
-        color: var(--cola-text);
-      }
-      .btn-ghost {
-        background: transparent;
-        color: var(--cola-text-muted);
-      }
-      .btn-ghost:hover:not(:disabled) {
-        background: var(--cola-bg);
-      }
       .input {
         flex: 1;
         min-width: 0;
         height: 34px;
         border: 1px solid var(--cola-border-strong);
         border-radius: 7px;
-        background: var(--cola-bg);
+        background: #fff;
         color: var(--cola-text);
         padding: 0 10px;
         font: 13px var(--mono);
+      }
+      .card-var {
+        display: block;
+        margin: 16px 0 6px;
+        font: 12px var(--mono);
+        color: var(--cola-text-muted);
+      }
+      .card.folded {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-block: 10px;
+      }
+      .card-status {
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: 13px;
+        color: var(--cola-text-muted);
+      }
+      .a-text a {
+        color: inherit;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        text-decoration-color: var(--cola-border-strong);
       }
       .note {
         display: flex;
@@ -475,20 +477,6 @@
       }
       .note.bad {
         color: var(--bad);
-      }
-      .resolved {
-        margin-top: 10px;
-        display: flex;
-        gap: 6px;
-        align-items: center;
-        font-size: 12px;
-        color: var(--cola-text-muted);
-      }
-      .resolved.ok {
-        color: var(--cola-text);
-      }
-      .resolved.ok svg {
-        stroke-width: 2.75;
       }
 
       /* ---------- inspector ---------- */
@@ -1095,27 +1083,22 @@
             <tbody>
               <tr>
                 <td>用户提供</td>
-                <td>卡片里填写并保存，卡片变成「✓ 已安全保存」</td>
+                <td>卡片里填写并提交，卡片收成一行「已保存」</td>
                 <td>怎么引用它，不含值</td>
               </tr>
               <tr>
-                <td>用户拒绝</td>
-                <td>点「拒绝」</td>
-                <td>用户拒绝，别再追问，说明卡在哪</td>
-              </tr>
-              <tr>
                 <td>没填卡片，直接打字</td>
-                <td>卡片变成「未作答」，消息照常发出</td>
+                <td>卡片收成一行「未提交」，消息照常发出</td>
                 <td>用户发了消息、没给值，读消息接着聊</td>
               </tr>
               <tr>
                 <td>30 分钟没响应</td>
-                <td>卡片变成「未作答」</td>
+                <td>卡片收成一行「未提交」</td>
                 <td>超时，没有拿到值</td>
               </tr>
               <tr>
                 <td>用户点停止</td>
-                <td>卡片变成「未作答」</td>
+                <td>卡片收成一行「未提交」</td>
                 <td>这一轮被中断</td>
               </tr>
               <tr>
@@ -1257,7 +1240,7 @@
         scrollDown()
       }
       // One bubble per call; the avatar marks the first bubble of a reply.
-      async function say(id, text) {
+      async function say(id, text, html) {
         const wrap = document.createElement('div')
         wrap.className = 'a-bubble'
         if (state.needAvatar) wrap.innerHTML = '<span class="avatar" aria-hidden="true">C</span>'
@@ -1272,7 +1255,8 @@
           scrollDown()
           await sleep(14)
         }
-        el.textContent = text
+        if (html) el.innerHTML = html
+        else el.textContent = text
       }
       function toolRow(title, detail) {
         const el = document.createElement('details')
@@ -1317,28 +1301,25 @@
       const CARD = {
         label: 'GitHub personal access token',
         reason: '用来调用 GitHub API 读取你的账号信息。',
-        url: 'https://github.com/settings/tokens/new?scopes=read:user&description=Cola',
         placeholder: 'ghp_…',
         name: NAME
       }
-      function cardHeader(b) {
-        return `<div class="card-h"><span class="card-icon">${icon('key')}</span><span class="card-kind">密钥</span></div><p class="card-title">${esc(b.label)}</p><p class="card-reason">${esc(b.reason)}</p>`
-      }
+      const kindRow = () =>
+        `<span class="card-icon">${icon('key')}</span><span class="card-kind">密钥</span>`
       function renderCard(el, b) {
         if (b.status) {
-          const ok = b.status === 'provided'
-          const text = ok ? '已安全保存' : b.status === 'declined' ? '已拒绝' : '未作答'
-          el.innerHTML =
-            cardHeader(b) +
-            `<div class="resolved ${ok ? 'ok' : ''}">${icon(ok ? 'check' : 'x')}<span>${text}</span></div>`
+          // Settled: one line, what was asked and how it ended.
+          el.className = 'card folded'
+          const text = b.status === 'provided' ? '已保存' : '未提交'
+          el.innerHTML = kindRow() + `<span class="card-status">${text} · ${esc(b.label)}</span>`
           return
         }
         el.innerHTML =
-          cardHeader(b) +
-          `<div class="card-row"><button type="button" class="btn btn-outline" data-act="open">打开 ${esc(new URL(b.url).host)} ${icon('ext')}</button></div>` +
-          `<p class="card-url">${esc(b.url)}</p>` +
-          `<div class="card-row"><input class="input" type="password" autocomplete="off" spellcheck="false" aria-label="${esc(b.label)}" placeholder="${esc(b.placeholder)}"></div>` +
-          `<div class="card-row between"><span class="note" data-note>${icon('shield')}<span>安全存储，绝不会展示给 Cola</span></span><span class="card-actions"><button type="button" class="btn btn-ghost" data-act="decline">拒绝</button><button type="submit" class="btn btn-primary" disabled>安全保存</button></span></div>`
+          `<div class="card-h">${kindRow()}</div>` +
+          `<p class="card-title">${esc(b.label)}</p><p class="card-reason">${esc(b.reason)}</p>` +
+          `<label class="card-var" for="secret-input">${ENV}</label>` +
+          `<div style="display:flex"><input id="secret-input" class="input" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(b.placeholder)}"></div>` +
+          `<div class="card-row between"><span class="note">${icon('shield')}<span>安全存储，绝不会展示给 Cola</span></span><button type="submit" class="btn btn-primary" disabled>提交</button></div>`
         const input = $('input', el)
         const save = $('button[type=submit]', el)
         input.addEventListener('input', () => (save.disabled = !input.value))
@@ -1350,19 +1331,6 @@
           input.value = ''
           submit({ status: 'provided', value }, 'desktop')
         })
-        $('[data-act=decline]', el).addEventListener('click', () =>
-          submit({ status: 'declined' }, 'desktop')
-        )
-        $('[data-act=open]', el).addEventListener('click', () =>
-          flashNote(el, `（原型）会用系统浏览器打开 ${b.url}`)
-        )
-      }
-      function flashNote(el, msg) {
-        const note = $('[data-note] span', el)
-        if (!note) return
-        const prev = note.textContent
-        note.textContent = msg
-        setTimeout(() => note.isConnected && (note.textContent = prev), 2200)
       }
 
       function submit(params, conn) {
@@ -1391,8 +1359,6 @@
         switch (status) {
           case 'provided':
             return `[request_secret] The user provided "${NAME}". It is available to every bash command in this conversation as the environment variable ${ENV}; reference it as $${ENV}. You never see the value: tool output that contains it shows [REDACTED:${NAME}]. Do not print it, write it into files or chat, or pass it to a command that stores it unless the user asked for that. When the user wants it saved (e.g. in an MCP server's config), write it from the variable in a command (jq --arg); never rewrite a file from content you read back, which shows [REDACTED:${NAME}] in place of the value and would overwrite it. It is kept for this session only (at most 24 hours).`
-          case 'declined':
-            return `[request_secret] The user declined to provide "${NAME}". Do not ask again unless they bring it up; continue without it or explain what is blocked.`
           case 'replied':
             return `[request_secret] The user sent a message instead of filling in the card; no value was provided for "${NAME}". Read their message and go on from it.`
           case 'timeout':
@@ -1409,11 +1375,10 @@
           ? `<pre>${esc(state.result)}</pre>`
           : '<span class="empty">卡片还没结束</span>'
         if (state.block) {
-          const { label, reason, url, name, status } = state.block
+          const { label, reason, name, status } = state.block
           const stored = {
             卡片: label,
             说明: reason,
-            链接: url,
             名字: name,
             ...(status ? { 状态: status } : {})
           }
@@ -1471,7 +1436,11 @@
           userMsg('帮我用 GitHub API 查一下我的账号信息')
           await sleep(500)
           guard(id)
-          await say(id, '好，这得用你的 GitHub token 才能查，麻烦在下面填一下。')
+          await say(
+            id,
+            '好，这得用你的 GitHub token 才能查。先创建一个 token（已经勾好 read:user），再填到下面。',
+            '好，这得用你的 GitHub token 才能查。先<a href="https://github.com/settings/tokens/new?scopes=read:user&amp;description=Cola" target="_blank" rel="noopener">创建一个 token</a>（已经勾好 read:user），再填到下面。'
+          )
           await sleep(300)
           guard(id)
           state.block = { requestId: `secret-${Date.now()}-1`, ...CARD }
@@ -1500,13 +1469,6 @@
           await sleep(400)
           guard(id)
 
-          if (outcome.status === 'declined') {
-            await say(
-              id,
-              '好的，不用 token 的话我没法读取你的账号信息。你也可以直接打开 github.com 的个人主页查看。'
-            )
-            return
-          }
           if (outcome.status === 'replied') {
             await say(id, '好，那先不查了。之后要查的话随时叫我。')
             return
@@ -1628,7 +1590,7 @@
           body('card').innerHTML =
             i === 0
               ? `<div class="dfx-input">${P(TOKEN)}</div><small>提交后输入框立刻清空</small>`
-              : `<div class="dfx-ok">${icon('check')}已安全保存</div><small>对话记录里只有卡片标题和状态</small>`
+              : `<div class="dfx-ok">${icon('check')}已保存</div><small>对话记录里只有卡片标题和状态</small>`
           body('mem').innerHTML =
             i === 0
               ? EMPTY('空')
