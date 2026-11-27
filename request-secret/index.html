@@ -422,19 +422,12 @@
         color: #6f6f6f;
         white-space: pre-wrap;
       }
-      .card-var {
-        display: block;
-        margin-top: 19px;
-        font-size: 12px;
-        line-height: 16px;
-        color: #6f6f6f;
-      }
       .card-input {
         display: block;
         box-sizing: border-box;
         width: 100%;
         height: 30px;
-        margin-top: 6px;
+        margin-top: 16px;
         padding: 0 12px;
         border: 0.5px solid #e7e7e7;
         border-radius: 10px;
@@ -1330,8 +1323,7 @@
         el.innerHTML =
           `<div class="card-h">${kindRow()}<span class="card-kind">密钥</span></div>` +
           `<p class="card-title">${esc(b.label)}</p><p class="card-reason">${esc(b.reason)}</p>` +
-          `<label class="card-var" for="secret-input">${ENV}</label>` +
-          `<input id="secret-input" class="card-input" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(b.placeholder)}">` +
+          `<input id="secret-input" class="card-input" aria-label="${esc(b.label)}" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(b.placeholder)}">` +
           `<div class="card-foot"><span class="card-note">${icon('shield')}<span>安全存储，绝不会展示给 Cola</span></span><button type="submit" class="card-submit" disabled>提交</button></div>`
         const input = $('input', el)
         const save = $('button[type=submit]', el)
