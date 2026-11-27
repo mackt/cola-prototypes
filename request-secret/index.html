@@ -354,13 +354,18 @@
       }
 
       /* ---------- the secret card (mirrors SecretRequestBlock.tsx) ---------- */
+      /* Grok's form card, measured from its screenshot. */
       .card {
-        border: 1px solid var(--cola-border);
-        border-radius: 20px;
-        background: #fff;
-        padding: 14px 16px;
+        width: calc((100% - 36px) * 0.85);
         /* Lined up with the bubbles, past the avatar column. */
         margin: 8px 0 12px 36px;
+        padding: 16px;
+        border-radius: 24px;
+        background: #fff;
+        box-shadow:
+          0 0 0 0.5px rgba(0, 0, 0, 0.1),
+          0 1px 4px rgba(0, 0, 0, 0.04);
+        font-family: var(--ui);
         animation: fade 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       }
       @keyframes fade {
@@ -369,114 +374,120 @@
           transform: translateY(4px);
         }
       }
-      .card-h {
+      .card-h,
+      .card.folded {
         display: flex;
-        gap: 10px;
         align-items: center;
+        gap: 8px;
       }
-      .card-icon {
+      .card-chip {
         display: grid;
-        place-items: center;
         flex: none;
-        width: 28px;
-        height: 28px;
-        border: 1px solid var(--cola-border);
-        border-radius: 8px;
-        background: var(--cola-bg);
-        color: var(--cola-text-muted);
-      }
-      .card-icon svg {
-        width: 15px;
-        height: 15px;
+        place-items: center;
+        box-sizing: border-box;
+        width: 19px;
+        height: 19px;
+        border: 0.5px solid #ebebeb;
+        border-radius: 5px;
+        background: #f4f4f4;
+        color: #6b6b6b;
       }
       .card-kind {
         font-size: 13px;
         font-weight: 500;
-        color: var(--cola-text-strong);
+        line-height: 18px;
+        color: #1c1c1c;
+      }
+      .card-line {
+        min-width: 0;
+        margin: 0;
+        overflow: hidden;
+        font-size: 13px;
+        line-height: 18px;
+        color: #8a8a8a;
+        white-space: nowrap;
+        text-overflow: ellipsis;
       }
       .card-title {
+        margin: 17px 0 0;
         font-size: 15px;
         font-weight: 600;
-        color: var(--cola-text-strong);
-        margin: 14px 0 0;
+        line-height: 22px;
+        color: #1c1c1c;
       }
       .card-reason {
-        margin: 4px 0 0;
-        font-size: 12px;
-        line-height: 1.6;
-        color: var(--cola-text-muted);
-        white-space: pre-wrap;
-      }
-      .card-row {
-        margin-top: 12px;
-        display: flex;
-        gap: 8px;
-        align-items: center;
-      }
-      .card-row.between {
-        justify-content: space-between;
-      }
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        border-radius: 7px;
+        margin: 0;
         font-size: 13px;
-        height: 30px;
-        padding: 0 12px;
-        border: 1px solid transparent;
-        white-space: nowrap;
-      }
-      .btn-primary {
-        background: var(--cola-accent);
-        color: var(--cola-accent-fg);
-      }
-      .input {
-        flex: 1;
-        min-width: 0;
-        height: 34px;
-        border: 1px solid var(--cola-border-strong);
-        border-radius: 7px;
-        background: #fff;
-        color: var(--cola-text);
-        padding: 0 10px;
-        font: 13px var(--mono);
+        line-height: 20px;
+        color: #6f6f6f;
+        white-space: pre-wrap;
       }
       .card-var {
         display: block;
-        margin: 16px 0 6px;
-        font: 12px var(--mono);
-        color: var(--cola-text-muted);
+        margin-top: 19px;
+        font-size: 12px;
+        line-height: 16px;
+        color: #6f6f6f;
       }
-      .card.folded {
+      .card-input {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        height: 30px;
+        margin-top: 6px;
+        padding: 0 12px;
+        border: 0.5px solid #e7e7e7;
+        border-radius: 10px;
+        background: #fff;
+        color: #1c1c1c;
+        font: 13px var(--ui);
+        outline: none;
+      }
+      .card-input:focus-visible {
+        border-color: #a3a3a3;
+      }
+      .card-foot {
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding-block: 10px;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 24px;
       }
-      .card-status {
+      .card-note {
+        display: flex;
         min-width: 0;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        font-size: 13px;
-        color: var(--cola-text-muted);
+        align-items: center;
+        gap: 6px;
+        font-size: 11.5px;
+        line-height: 16px;
+        color: #8a8a8a;
+      }
+      .card-note svg {
+        width: 13px;
+        height: 13px;
+        flex: none;
+        stroke-width: 1.75;
+      }
+      .card-submit {
+        flex: none;
+        height: 33px;
+        padding: 0 30px;
+        border: 0;
+        border-radius: 999px;
+        background: #1c1c1c;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .card-submit:disabled {
+        background: #e1e1e1;
+        opacity: 1;
       }
       .a-text a {
         color: inherit;
         text-decoration: underline;
         text-underline-offset: 3px;
         text-decoration-color: var(--cola-border-strong);
-      }
-      .note {
-        display: flex;
-        gap: 5px;
-        align-items: center;
-        font-size: 12px;
-        color: var(--cola-text-muted);
-      }
-      .note.bad {
-        color: var(--bad);
       }
 
       /* ---------- inspector ---------- */
@@ -1305,21 +1316,23 @@
         name: NAME
       }
       const kindRow = () =>
-        `<span class="card-icon">${icon('key')}</span><span class="card-kind">密钥</span>`
+        `<span class="card-chip"><svg width="13" height="8" viewBox="0 0 13 8" fill="none" aria-hidden="true"><circle cx="9.5" cy="4" r="2.75" stroke="currentColor" stroke-width="1.2"/><path d="M6.75 4H.75M1.75 4v2.5M3.75 4v2" stroke="currentColor" stroke-width="1.2"/></svg></span>`
       function renderCard(el, b) {
         if (b.status) {
           // Settled: one line, what was asked and how it ended.
           el.className = 'card folded'
           const text = b.status === 'provided' ? '已保存' : '未提交'
-          el.innerHTML = kindRow() + `<span class="card-status">${text} · ${esc(b.label)}</span>`
+          el.innerHTML =
+            kindRow() +
+            `<p class="card-line"><span class="card-kind">密钥</span> ${text} · ${esc(b.label)}</p>`
           return
         }
         el.innerHTML =
-          `<div class="card-h">${kindRow()}</div>` +
+          `<div class="card-h">${kindRow()}<span class="card-kind">密钥</span></div>` +
           `<p class="card-title">${esc(b.label)}</p><p class="card-reason">${esc(b.reason)}</p>` +
           `<label class="card-var" for="secret-input">${ENV}</label>` +
-          `<div style="display:flex"><input id="secret-input" class="input" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(b.placeholder)}"></div>` +
-          `<div class="card-row between"><span class="note">${icon('shield')}<span>安全存储，绝不会展示给 Cola</span></span><button type="submit" class="btn btn-primary" disabled>提交</button></div>`
+          `<input id="secret-input" class="card-input" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(b.placeholder)}">` +
+          `<div class="card-foot"><span class="card-note">${icon('shield')}<span>安全存储，绝不会展示给 Cola</span></span><button type="submit" class="card-submit" disabled>提交</button></div>`
         const input = $('input', el)
         const save = $('button[type=submit]', el)
         input.addEventListener('input', () => (save.disabled = !input.value))
