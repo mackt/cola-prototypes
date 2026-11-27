@@ -25,7 +25,6 @@
         --ok: #2f7d4f;
         --warn: #a15c07;
         --bad: #b42318;
-        --redact-bg: rgba(161, 92, 7, 0.14);
         --plain-bg: rgba(180, 35, 24, 0.1);
         --ref: #2f5fb3;
         /* Message bubbles, as the desktop app draws them (colors.css). */
@@ -284,73 +283,6 @@
         50% {
           opacity: 0;
         }
-      }
-      .tool {
-        margin: 8px 0 8px 36px;
-        font-size: 13px;
-      }
-      .tool summary {
-        list-style: none;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-        color: var(--cola-text-muted);
-        padding: 2px 0;
-      }
-      .tool summary::-webkit-details-marker {
-        display: none;
-      }
-      .tool-title {
-        flex: none;
-        white-space: nowrap;
-      }
-      .tool summary code {
-        background: none;
-        padding: 0;
-        color: var(--cola-text);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        min-width: 0;
-      }
-      .tool .spin {
-        width: 10px;
-        height: 10px;
-        border: 2px solid var(--cola-border-strong);
-        border-top-color: transparent;
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-        flex: none;
-      }
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-      .tool pre {
-        margin: 6px 0 0;
-        padding: 10px 12px;
-        background: var(--code-bg);
-        border-radius: 8px;
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-        max-height: 260px;
-        overflow-y: auto;
-      }
-      .demo-note {
-        margin: 4px 0 12px 36px;
-        padding: 8px 10px;
-        border: 1px dashed var(--cola-border-strong);
-        border-radius: 8px;
-        font-size: 12.5px;
-        color: var(--cola-text-muted);
-      }
-      .redacted {
-        background: var(--redact-bg);
-        color: var(--warn);
-        border-radius: 3px;
-        padding: 0 2px;
       }
 
       /* ---------- the secret card (mirrors SecretRequestBlock.tsx) ---------- */
@@ -1132,83 +1064,6 @@
     <script>
       'use strict'
 
-      // ---------- redaction: same rules as request-secret/redact.ts ----------
-      const MIN_REDACT_LENGTH = 4
-      const utf8Base64 = (s) => {
-        const bytes = new TextEncoder().encode(s)
-        let bin = ''
-        for (const b of bytes) bin += String.fromCharCode(b)
-        return btoa(bin)
-      }
-      function needlesFor(name, value) {
-        const label = `[REDACTED:${name}]`
-        const b64 = utf8Base64(value)
-        const forms = new Set([
-          value,
-          b64,
-          b64.replace(/=+$/, ''),
-          b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
-          encodeURIComponent(value)
-        ])
-        return [...forms]
-          .filter((t) => t.length >= MIN_REDACT_LENGTH)
-          .map((text) => ({ text, label }))
-      }
-      const currentNeedles = () =>
-        state.store
-          .flatMap((s) => needlesFor(s.name, s.value))
-          .sort((a, b) => b.text.length - a.text.length)
-      function findMatches(text, needles) {
-        const matches = []
-        for (const n of needles) {
-          let from = 0
-          for (;;) {
-            const start = text.indexOf(n.text, from)
-            if (start < 0) break
-            const end = start + n.text.length
-            if (!matches.some((m) => start < m.end && end > m.start))
-              matches.push({ start, end, label: n.label })
-            from = end
-          }
-        }
-        return matches.sort((a, b) => a.start - b.start)
-      }
-      function applyMatches(text, matches) {
-        let out = ''
-        let cursor = 0
-        for (const m of matches) {
-          out += text.slice(cursor, m.start) + m.label
-          cursor = m.end
-        }
-        return out + text.slice(cursor)
-      }
-      function createStreamRedactor(emit) {
-        let pending = ''
-        return {
-          push(chunk) {
-            pending += chunk
-            const needles = currentNeedles()
-            if (needles.length === 0) {
-              emit(pending)
-              pending = ''
-              return
-            }
-            const hold = Math.max(...needles.map((n) => n.text.length)) - 1
-            const matches = findMatches(pending, needles)
-            let cut = Math.max(0, pending.length - hold)
-            for (const m of matches) if (m.start < cut && m.end > cut) cut = m.end
-            if (cut === 0) return
-            const ready = pending.slice(0, cut)
-            pending = pending.slice(cut)
-            emit(applyMatches(ready, findMatches(ready, needles)))
-          },
-          end() {
-            if (pending) emit(applyMatches(pending, findMatches(pending, currentNeedles())))
-            pending = ''
-          }
-        }
-      }
-
       // ---------- state ----------
       const $ = (s, root = document) => root.querySelector(s)
       const chat = $('#chat')
@@ -1262,45 +1117,6 @@
         if (html) el.innerHTML = html
         else el.textContent = text
       }
-      function toolRow(title, detail) {
-        const el = document.createElement('details')
-        el.className = 'tool'
-        el.innerHTML = `<summary><span class="spin"></span><span class="tool-title">${esc(title)}</span><code>${esc(detail)}</code></summary><pre></pre>`
-        chat.append(el)
-        scrollDown()
-        return {
-          el,
-          done(output) {
-            $('.spin', el).outerHTML = icon('term')
-            if (output !== undefined) $('pre', el).textContent = output
-          }
-        }
-      }
-      const highlight = (text) =>
-        esc(text).replace(/\[REDACTED:[a-z0-9_]+\]/g, (m) => `<span class="redacted">${m}</span>`)
-
-      async function runBash(id, command, output) {
-        const row = toolRow('运行命令', command)
-        row.el.open = true
-        const pre = $('pre', row.el)
-        let shown = ''
-        const redactor = createStreamRedactor((t) => {
-          shown += t
-          pre.innerHTML = highlight(shown)
-          scrollDown()
-        })
-        await sleep(350)
-        for (let i = 0; i < output.length; ) {
-          guard(id)
-          const n = 3 + Math.floor(Math.random() * 7)
-          redactor.push(output.slice(i, i + n))
-          i += n
-          await sleep(22)
-        }
-        redactor.end()
-        row.done()
-      }
-
       // ---------- the card ----------
       const CARD = {
         label: 'GitHub personal access token',
@@ -1409,9 +1225,7 @@
                   `值：    ${mask(s.value)}`,
                   `过期：  ${s.expires}`
                 ]
-                const warn =
-                  s.value.length < MIN_REDACT_LENGTH ? '\n\n⚠ 少于 4 个字符，输出里不会被替换' : ''
-                return `<div class="frame"><div class="frame-h"><span class="tag plain">含明文</span><span class="dir">只在 Cola 后台进程里</span></div><pre>${esc(lines.join('\n') + warn)}</pre></div>`
+                return `<div class="frame"><div class="frame-h"><span class="tag plain">含明文</span><span class="dir">只在 Cola 后台进程里</span></div><pre>${esc(lines.join('\n'))}</pre></div>`
               })
               .join('')
           : '<span class="empty">空</span>'
@@ -1486,40 +1300,8 @@
           }
 
           await say(id, '收到，我查一下。')
-          const ref = `$${ENV}`
-          const body = JSON.stringify(
-            {
-              login: 'octo-reviewer',
-              id: 1234567,
-              name: 'Cola Reviewer',
-              public_repos: 42,
-              created_at: '2019-03-14T08:00:00Z'
-            },
-            null,
-            2
-          )
-          await runBash(
-            id,
-            `curl -s -H "Authorization: Bearer ${ref}" https://api.github.com/user`,
-            body + '\n'
-          )
-          // Shows output redaction: this command's output carries the token.
-          {
-            await say(id, '再确认一下请求头是否带上了：')
-            const v = outcome.value
-            await runBash(
-              id,
-              `curl -sv -H "Authorization: Bearer ${ref}" https://api.github.com/user 2>&1 | grep -i authorization; printf %s "${ref}" | base64`,
-              `> authorization: Bearer ${v}\r\n${utf8Base64(v)}\n`
-            )
-            if (v.length < MIN_REDACT_LENGTH) {
-              const note = document.createElement('p')
-              note.className = 'demo-note'
-              note.textContent = `演示提示：「${v}」不到 ${MIN_REDACT_LENGTH} 个字符，太短的值不脱敏，否则输出里碰巧相同的普通文字也会被换掉。填个像样的 token（比如 ghp_demo1234）再试一次。`
-              chat.append(note)
-              scrollDown()
-            }
-          }
+          await sleep(900)
+          guard(id)
           await say(
             id,
             '你的 GitHub 账号是 octo-reviewer（Cola Reviewer），有 42 个公开仓库，2019 年注册。'
