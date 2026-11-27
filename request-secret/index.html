@@ -358,7 +358,7 @@
         border: 1px solid var(--cola-border);
         border-radius: var(--cola-radius-card);
         background: var(--cola-bg-surface);
-        padding: 12px 16px;
+        padding: 14px 16px;
         /* Lined up with the bubbles, past the avatar column. */
         margin: 8px 0 12px 36px;
         animation: fade 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -371,14 +371,23 @@
       }
       .card-h {
         display: flex;
-        gap: 8px;
-        align-items: flex-start;
+        gap: 10px;
+        align-items: center;
       }
-      .card-h > svg {
-        margin-top: 3px;
+      .card-icon {
+        display: grid;
+        place-items: center;
+        flex: none;
+        width: 28px;
+        height: 28px;
+        border: 1px solid var(--cola-border);
+        border-radius: 8px;
+        background: var(--cola-bg);
         color: var(--cola-text-muted);
-        width: 16px;
-        height: 16px;
+      }
+      .card-icon svg {
+        width: 15px;
+        height: 15px;
       }
       .card-title {
         font-size: 14px;
@@ -387,14 +396,14 @@
         margin: 0;
       }
       .card-reason {
-        margin: 4px 0 0;
+        margin: 8px 0 0;
         font-size: 12px;
         line-height: 1.6;
         color: var(--cola-text-muted);
         white-space: pre-wrap;
       }
       .card-url {
-        margin: 6px 0 0 24px;
+        margin: 6px 0 0;
         font: 12px var(--mono);
         color: var(--cola-text-muted);
         white-space: nowrap;
@@ -402,15 +411,17 @@
         text-overflow: ellipsis;
       }
       .card-row {
-        padding-left: 24px;
-        margin-top: 10px;
+        margin-top: 12px;
         display: flex;
         gap: 8px;
         align-items: center;
       }
       .card-row.between {
         justify-content: space-between;
-        margin-top: 8px;
+      }
+      .card-actions {
+        display: flex;
+        gap: 6px;
       }
       .btn {
         display: inline-flex;
@@ -442,7 +453,7 @@
       .input {
         flex: 1;
         min-width: 0;
-        height: 30px;
+        height: 34px;
         border: 1px solid var(--cola-border-strong);
         border-radius: 7px;
         background: var(--cola-bg);
@@ -461,8 +472,7 @@
         color: var(--bad);
       }
       .resolved {
-        padding-left: 24px;
-        margin-top: 8px;
+        margin-top: 10px;
         display: flex;
         gap: 6px;
         align-items: center;
@@ -894,6 +904,12 @@
         <path d="M10 14 21 3" />
         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
       </symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24">
+        <path
+          d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+        />
+        <path d="m9 12 2 2 4-4" />
+      </symbol>
       <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
       <symbol id="i-x" viewBox="0 0 24 24">
         <path d="M18 6 6 18" />
@@ -1295,14 +1311,13 @@
       // ---------- the card ----------
       const CARD = {
         label: 'GitHub personal access token',
-        reason:
-          '用来调用 GitHub API 读取你的账号信息。',
+        reason: '用来调用 GitHub API 读取你的账号信息。',
         url: 'https://github.com/settings/tokens/new?scopes=read:user&description=Cola',
         placeholder: 'ghp_…',
         name: NAME
       }
       function cardHeader(b) {
-        return `<div class="card-h">${icon('key')}<div style="min-width:0;flex:1"><p class="card-title">${esc(b.label)}</p><p class="card-reason">${esc(b.reason)}</p></div></div>`
+        return `<div class="card-h"><span class="card-icon">${icon('key')}</span><p class="card-title">${esc(b.label)}</p></div><p class="card-reason">${esc(b.reason)}</p>`
       }
       function renderCard(el, b) {
         if (b.status) {
@@ -1317,8 +1332,8 @@
           cardHeader(b) +
           `<div class="card-row"><button type="button" class="btn btn-outline" data-act="open">打开 ${esc(new URL(b.url).host)} ${icon('ext')}</button></div>` +
           `<p class="card-url">${esc(b.url)}</p>` +
-          `<div class="card-row"><input class="input" type="password" autocomplete="off" spellcheck="false" aria-label="${esc(b.label)}" placeholder="${esc(b.placeholder)}"><button type="submit" class="btn btn-primary" disabled>安全保存</button></div>` +
-          `<div class="card-row between"><span class="note" data-note><span></span></span><button type="button" class="btn btn-ghost" data-act="decline">拒绝</button></div>`
+          `<div class="card-row"><input class="input" type="password" autocomplete="off" spellcheck="false" aria-label="${esc(b.label)}" placeholder="${esc(b.placeholder)}"></div>` +
+          `<div class="card-row between"><span class="note" data-note>${icon('shield')}<span>安全存储，绝不会展示给 Cola</span></span><span class="card-actions"><button type="button" class="btn btn-ghost" data-act="decline">拒绝</button><button type="submit" class="btn btn-primary" disabled>安全保存</button></span></div>`
         const input = $('input', el)
         const save = $('button[type=submit]', el)
         input.addEventListener('input', () => (save.disabled = !input.value))
