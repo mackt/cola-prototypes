@@ -894,12 +894,6 @@
         <path d="M10 14 21 3" />
         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
       </symbol>
-      <symbol id="i-shield" viewBox="0 0 24 24">
-        <path
-          d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
-        />
-        <path d="m9 12 2 2 4-4" />
-      </symbol>
       <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
       <symbol id="i-x" viewBox="0 0 24 24">
         <path d="M18 6 6 18" />
@@ -1324,7 +1318,7 @@
           `<div class="card-row"><button type="button" class="btn btn-outline" data-act="open">打开 ${esc(new URL(b.url).host)} ${icon('ext')}</button></div>` +
           `<p class="card-url">${esc(b.url)}</p>` +
           `<div class="card-row"><input class="input" type="password" autocomplete="off" spellcheck="false" aria-label="${esc(b.label)}" placeholder="${esc(b.placeholder)}"><button type="submit" class="btn btn-primary" disabled>安全保存</button></div>` +
-          `<div class="card-row between"><span class="note" data-note>${icon('shield')}<span>安全存储，绝不会展示给智能体</span></span><button type="button" class="btn btn-ghost" data-act="decline">拒绝</button></div>`
+          `<div class="card-row between"><span class="note" data-note><span></span></span><button type="button" class="btn btn-ghost" data-act="decline">拒绝</button></div>`
         const input = $('input', el)
         const save = $('button[type=submit]', el)
         input.addEventListener('input', () => (save.disabled = !input.value))
